@@ -1,0 +1,158 @@
+﻿@model List<FocusFlow.Models.StudySession>
+
+@{
+    ViewData["Title"] = "Session History";
+    var total = Model.Sum(s => s.Hours);
+    var avg = Model.Count > 0 ? Math.Round(total / Model.Count, 1) : 0;
+    var lastDate = Model.OrderByDescending(s => s.Date).FirstOrDefault()?.Date;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1" style="letter-spacing:-.02em;">Session History</h2>
+        <p class="text-muted mb-0 small">Every study session you've logged</p>
+    </div>
+    <a asp-action="Log" class="btn btn-primary rounded-pill px-4">
+        <i class="bi bi-plus-lg me-1"></i> Log Session
+    </a>
+</div>
+
+<!-- Stat cards — each with a left-border performance color -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="ff-card p-4 border-perf-good">
+            <div class="small fw-semibold text-uppercase text-muted mb-1">Sessions</div>
+            <div class="fs-2 fw-bold perf-good">@Model.Count</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="ff-card p-4 border-perf-avg">
+            <div class="small fw-semibold text-uppercase text-muted mb-1">Total Hours</div>
+            <div class="fs-2 fw-bold perf-avg">@total h</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="ff-card p-4"
+             style="border-left:4px solid #3b82f6;">
+            <div class="small fw-semibold text-uppercase text-muted mb-1">Avg/Session</div>
+            <div class="fs-2 fw-bold" style="color:#2563eb;">@avg h</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="ff-card p-4" style="border-left:4px solid #7c3aed;">
+            <div class="small fw-semibold text-uppercase text-muted mb-1">Last Session</div>
+            <div class="fs-4 fw-bold" style="color:#7c3aed;">
+                @(lastDate.HasValue? lastDate.Value.ToString("dd MMM") : "—")
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="ff-card p-5 text-center text-muted">
+        <i class="bi bi-clock-history fs-1 d-block mb-3"></i>
+        <p class="fs-5 mb-3">No sessions logged yet.</p>
+        <a asp-action="Log" class="btn btn-primary rounded-pill px-4">
+            Log your first session
+        </a>
+    </div>
+}
+else
+{
+    <!-- Filter pills -->
+    <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+        <span class="small fw-semibold text-muted">Filter:</span>
+        <button class="btn btn-sm btn-primary rounded-pill filter-btn"
+                data-subject="all">
+            All
+        </button>
+        @foreach (var sub in Model.Select(s => s.SubjectName).Distinct())
+        {
+            <button class="btn btn-sm btn-outline-secondary rounded-pill filter-btn"
+                    data-subject="@sub">
+                @sub
+            </button>
+        }
+    </div>
+
+    <div class="ff-card overflow-hidden">
+        <table class="table table-hover align-middle mb-0" id="sessionsTable">
+            <thead style="background:#f8fafc;">
+                <tr>
+                    <th class="ps-4 py-3 text-uppercase small fw-semibold text-muted">Date</th>
+                    <th class="py-3 text-uppercase small fw-semibold text-muted">Subject</th>
+                    <th class="py-3 text-uppercase small fw-semibold text-muted">Hours</th>
+                    <th class="py-3 text-uppercase small fw-semibold text-muted">Performance</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model)
+                {
+                    // Color-code by hours studied in that session
+                    var perfClass = s.Hours >= 4 ? "perf-good"
+                    : s.Hours >= 2 ? "perf-avg"
+                    : "perf-weak";
+                    var barClass = s.Hours >= 4 ? "bar-good"
+                    : s.Hours >= 2 ? "bar-avg"
+                    : "bar-weak";
+                    var badgeCss = s.Hours >= 4 ? "bg-perf-good"
+                    : s.Hours >= 2 ? "bg-perf-avg"
+                    : "bg-perf-weak";
+                    var label = s.Hours >= 4 ? "Deep Focus"
+                    : s.Hours >= 2 ? "Focused"
+                    : "Quick";
+
+                    <tr data-subject="@s.SubjectName">
+                        <td class="ps-4">
+                            <div class="fw-semibold">@s.Date.ToString("dd MMM yyyy")</div>
+                            <div class="text-muted small">@s.Date.DayOfWeek</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary bg-opacity-10
+                                                 text-primary rounded-pill px-3 py-2 fw-semibold">
+                                @s.SubjectName
+                            </span>
+                        </td>
+                        <td>
+                            <span class="fw-bold fs-5 @perfClass">@s.Hours</span>
+                            <span class="text-muted small"> hrs</span>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill @badgeCss fw-semibold"
+                                  style="font-size:11px;">
+                                @label
+                            </span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot style="background:#f8fafc;">
+                <tr>
+                    <td class="ps-4 py-3 fw-semibold" colspan="2">
+                        Total — @Model.Count sessions
+                    </td>
+                    <td class="py-3 fw-bold fs-5 perf-good">
+                        @total <span class="text-muted fw-normal small">hrs</span>
+                    </td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sub = btn.dataset.subject;
+                document.querySelectorAll('.filter-btn').forEach(b =>
+                    b.classList.replace('btn-primary','btn-outline-secondary'));
+                btn.classList.replace('btn-outline-secondary','btn-primary');
+                document.querySelectorAll('#sessionsTable tbody tr').forEach(row =>
+                    row.style.display = sub==='all' || row.dataset.subject===sub ? '' : 'none');
+            });
+        });
+    </script>
+}

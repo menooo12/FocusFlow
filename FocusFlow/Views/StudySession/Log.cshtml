@@ -1,0 +1,140 @@
+﻿@model FocusFlow.Models.StudySession
+
+@{
+    ViewData["Title"] = "Log Session";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 p-md-5">
+
+                    <!-- Header -->
+                    <div class="mb-4">
+                        <a asp-controller="StudySession" asp-action="Index"
+                           class="text-muted text-decoration-none small
+                                  d-inline-flex align-items-center gap-1 mb-3">
+                            <i class="bi bi-arrow-left"></i> Back to sessions
+                        </a>
+                        <h3 class="fw-bold mb-1">Log a Study Session</h3>
+                        <p class="text-muted small mb-0">
+                            Record your study time for a subject
+                        </p>
+                    </div>
+
+                    <form asp-action="Log" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <!-- ✅ Subject Dropdown — SubjectId مش SubjectName -->
+                        <div class="mb-4">
+                            <label asp-for="SubjectId"
+                                   class="form-label fw-semibold small
+                                          text-uppercase text-muted">
+                                Subject
+                            </label>
+                            <select asp-for="SubjectId"
+                                    asp-items="ViewBag.SubjectList"
+                                    class="form-select form-select-lg rounded-3
+                                           @(ViewData.ModelState["SubjectId"]?.Errors.Count > 0
+                                                                                   ? "is-invalid" : "")">
+                                <option value="">-- Select a subject --</option>
+                            </select>
+                            <span asp-validation-for="SubjectId"
+                                  class="invalid-feedback fw-semibold"></span>
+                        </div>
+
+                        <!-- Hours -->
+                        <div class="mb-4">
+                            <label asp-for="Hours"
+                                   class="form-label fw-semibold small
+                                          text-uppercase text-muted">
+                                Hours Studied
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <input asp-for="Hours"
+                                       type="number"
+                                       step="0.5" min="0.5" max="24"
+                                       class="form-control rounded-start-3
+                                              @(ViewData.ModelState["Hours"]?.Errors.Count > 0
+                                                                                         ? "is-invalid" : "")"
+                                       placeholder="2.5" />
+                                <span class="input-group-text bg-light text-muted
+                                             rounded-end-3 border-start-0">
+                                    hours
+                                </span>
+                                <span asp-validation-for="Hours"
+                                      class="invalid-feedback fw-semibold"></span>
+                            </div>
+
+                            <!-- Quick-pick buttons -->
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                @foreach (var h in new[] { 0.5, 1.0, 1.5, 2.0, 3.0, 4.0 })
+                                {
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-secondary rounded-pill"
+                                            onclick="document.getElementById('Hours').value='@h'">
+                                        @h h
+                                    </button>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="mb-4">
+                            <label asp-for="Date"
+                                   class="form-label fw-semibold small
+                                          text-uppercase text-muted">
+                                Date
+                            </label>
+                            <input asp-for="Date"
+                                   type="date"
+                                   class="form-control form-control-lg rounded-3
+                                          @(ViewData.ModelState["Date"]?.Errors.Count > 0
+                                                                                 ? "is-invalid" : "")" />
+                            <span asp-validation-for="Date"
+                                  class="invalid-feedback fw-semibold"></span>
+                        </div>
+
+                        <hr class="opacity-25 mb-4" />
+
+                        <!-- Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit"
+                                    class="btn btn-primary btn-lg flex-grow-1 rounded-3">
+                                <i class="bi bi-check-lg me-1"></i> Save Session
+                            </button>
+                            <a asp-action="Index"
+                               class="btn btn-outline-secondary btn-lg rounded-3 px-4">
+                                Cancel
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+            <!-- Validation Summary -->
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+            {
+                <div class="alert alert-danger rounded-3 mt-3
+                                d-flex align-items-start gap-2">
+                    <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+                    <div>
+                        <div class="fw-semibold mb-1">Please fix the following:</div>
+                        <asp-validation-summary asp-validation-summary="ModelOnly"
+                                                class="mb-0 ps-3" />
+                    </div>
+                </div>
+            }
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,378 @@
+﻿@{
+    ViewData["Title"] = "Home — FocusFlow";
+
+    double totalHours = ViewBag.TotalHours ?? 0.0;
+    int sessions = ViewBag.SessionCount ?? 0;
+    string message = ViewBag.Message ?? "";
+    string alertType = ViewBag.AlertType ?? "secondary";
+    double focusScore = ViewBag.FocusScore ?? 0.0;
+    bool isLoggedIn = ViewBag.IsLoggedIn ?? false;
+}
+
+<style>
+    .hero {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+        border-radius: 20px;
+        padding: 80px 40px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 40px;
+    }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -80px;
+            left: -80px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(59,130,246,0.2), transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -80px;
+            right: -80px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
+            pointer-events: none;
+        }
+
+    .hero-title {
+        font-size: clamp(28px, 5vw, 52px);
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: -.03em;
+        line-height: 1.15;
+        margin-bottom: 16px;
+    }
+
+        .hero-title span {
+            color: #60a5fa;
+        }
+
+    .hero-sub {
+        font-size: 17px;
+        color: rgba(255,255,255,0.65);
+        max-width: 520px;
+        margin: 0 auto 32px;
+        line-height: 1.7;
+    }
+
+    .hero-btns {
+        display: flex;
+        gap: 14px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-hero-primary {
+        background: #2563eb;
+        color: #fff;
+        font-weight: 700;
+        font-size: 15px;
+        padding: 13px 30px;
+        border-radius: 10px;
+        text-decoration: none;
+        border: none;
+        transition: background .2s, transform .15s;
+    }
+
+        .btn-hero-primary:hover {
+            background: #1d4ed8;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+    .btn-hero-secondary {
+        background: rgba(255,255,255,0.08);
+        color: #fff;
+        font-weight: 600;
+        font-size: 15px;
+        padding: 13px 30px;
+        border-radius: 10px;
+        text-decoration: none;
+        border: 1px solid rgba(255,255,255,0.15);
+        transition: background .2s, transform .15s;
+    }
+
+        .btn-hero-secondary:hover {
+            background: rgba(255,255,255,0.14);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+    .feat-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 32px 24px;
+        text-align: center;
+        transition: box-shadow .2s, transform .2s;
+        height: 100%;
+    }
+
+        .feat-card:hover {
+            box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+            transform: translateY(-4px);
+        }
+
+    .feat-icon {
+        width: 58px;
+        height: 58px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        margin: 0 auto 18px;
+    }
+
+    .feat-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+
+    .feat-desc {
+        font-size: 14px;
+        color: #64748b;
+        line-height: 1.6;
+    }
+
+    .stat-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 28px;
+        transition: box-shadow .2s, transform .2s;
+    }
+
+        .stat-card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+
+    .stat-val {
+        font-size: 42px;
+        font-weight: 800;
+        letter-spacing: -.03em;
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-top: 6px;
+    }
+
+    .sec-title {
+        font-size: 22px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -.02em;
+    }
+
+    .sec-sub {
+        font-size: 14px;
+        color: #64748b;
+        margin-top: 4px;
+    }
+
+    .fade-up {
+        animation: fadeUp .5s ease both;
+    }
+
+        .fade-up:nth-child(2) {
+            animation-delay: .08s;
+        }
+
+        .fade-up:nth-child(3) {
+            animation-delay: .16s;
+        }
+
+    @@keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<!-- Alert — بس لو logged in -->
+@if (isLoggedIn)
+{
+    <div class="alert alert-@alertType d-flex align-items-center gap-2
+                    rounded-3 border-0 shadow-sm mb-4"
+         style="font-weight:600; font-size:14px;">
+        <i class="bi bi-info-circle-fill fs-5"></i>
+        @message
+    </div>
+}
+
+<!-- ── HERO ── -->
+<div class="hero fade-up">
+    <div style="position:relative; z-index:1;">
+        <div style="display:inline-block; background:rgba(96,165,250,0.12);
+                    border:1px solid rgba(96,165,250,0.25); border-radius:99px;
+                    padding:5px 16px; font-size:12px; font-weight:600;
+                    color:#93c5fd; letter-spacing:.06em;
+                    text-transform:uppercase; margin-bottom:20px;">
+            📚 Study Smarter. Focus Better.
+        </div>
+        <h1 class="hero-title">
+            Manage Your Study<br>Time <span>Smarter</span>
+        </h1>
+        <p class="hero-sub">
+            Track subjects, log study sessions, and get smart focus insights
+            — all in one place built for serious students.
+        </p>
+        <div class="hero-btns">
+            <a asp-controller="Subject" asp-action="Create" class="btn-hero-primary">
+                <i class="bi bi-rocket-takeoff-fill me-2"></i>Get Started
+            </a>
+            <a asp-controller="Dashboard" asp-action="Index" class="btn-hero-secondary">
+                <i class="bi bi-speedometer2 me-2"></i>View Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ── FEATURES ── -->
+<div class="mb-5">
+    <div class="mb-4">
+        <div class="sec-title">Everything you need to stay on track</div>
+        <div class="sec-sub">Three powerful tools built into one clean interface</div>
+    </div>
+    <div class="row g-4">
+        <div class="col-md-4 fade-up">
+            <div class="feat-card">
+                <div class="feat-icon" style="background:#dbeafe;">
+                    <i class="bi bi-journal-bookmark-fill" style="color:#2563eb;"></i>
+                </div>
+                <div class="feat-title">Track Subjects</div>
+                <div class="feat-desc">
+                    Add all your subjects, set target hours, and monitor
+                    your progress with beautiful visual bars.
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 fade-up">
+            <div class="feat-card">
+                <div class="feat-icon" style="background:#dcfce7;">
+                    <i class="bi bi-clock-history" style="color:#16a34a;"></i>
+                </div>
+                <div class="feat-title">Log Study Sessions</div>
+                <div class="feat-desc">
+                    Record every session with subject, hours, and date.
+                    Build a complete history of your study habits.
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 fade-up">
+            <div class="feat-card">
+                <div class="feat-icon" style="background:#f3e8ff;">
+                    <i class="bi bi-graph-up-arrow" style="color:#7c3aed;"></i>
+                </div>
+                <div class="feat-title">Smart Focus Insights</div>
+                <div class="feat-desc">
+                    Get an AI-powered focus score and personalized feedback
+                    to improve your weekly study performance.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ Stats — بس لو logged in -->
+@if (isLoggedIn)
+{
+    <div class="mb-2">
+        <div class="mb-4">
+            <div class="sec-title">Your Progress at a Glance</div>
+            <div class="sec-sub">Live data from your study sessions</div>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-val" style="color:#2563eb;">
+                        @totalHours<span style="font-size:20px;color:#94a3b8;">h</span>
+                    </div>
+                    <div class="stat-label">Total Hours</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-val" style="color:#7c3aed;">@sessions</div>
+                    <div class="stat-label">Sessions Logged</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-val" style="color:#16a34a;">
+                        @focusScore<span style="font-size:20px;color:#94a3b8;">%</span>
+                    </div>
+                    <div class="stat-label">Focus Score</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card" style="background:linear-gradient(135deg,#1e3a5f,#0f172a);
+                                                  border-color:transparent;">
+                    <div style="font-size:13px;color:rgba(255,255,255,0.6);
+                                    font-weight:600;margin-bottom:10px;">
+                        Ready to study?
+                    </div>
+                    <a asp-controller="StudySession" asp-action="Log"
+                       style="display:inline-flex;align-items:center;gap:6px;
+                                  background:#2563eb;color:#fff;text-decoration:none;
+                                  font-size:13px;font-weight:700;padding:9px 18px;
+                                  border-radius:8px;">
+                        <i class="bi bi-plus-lg"></i> Log Session
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!--  لو مش logged in -->
+    <div class="text-center py-4">
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;
+                        padding:40px;max-width:480px;margin:0 auto;">
+            <div style="font-size:36px;margin-bottom:12px;">🎯</div>
+            <div style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:8px;">
+                Ready to start tracking?
+            </div>
+            <div style="font-size:14px;color:#64748b;margin-bottom:24px;">
+                Create an account to track your study sessions and improve your focus.
+            </div>
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                <a asp-controller="Account" asp-action="Register"
+                   style="background:#2563eb;color:#fff;font-weight:700;font-size:14px;
+                              padding:11px 24px;border-radius:9px;text-decoration:none;">
+                    <i class="bi bi-person-plus me-1"></i> Create Account
+                </a>
+                <a asp-controller="Account" asp-action="Login"
+                   style="background:#f1f5f9;color:#0f172a;font-weight:600;font-size:14px;
+                              padding:11px 24px;border-radius:9px;text-decoration:none;
+                              border:1px solid #e2e8f0;">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                </a>
+            </div>
+        </div>
+    </div>
+}
