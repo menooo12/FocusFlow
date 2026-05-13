@@ -31,7 +31,8 @@
 }
 
 <style>
-    :root {
+    
+    [data-theme="dark"] {
         --ff-bg: #0d0f14;
         --ff-surface: #13161e;
         --ff-surface2: #1a1d27;
@@ -45,7 +46,24 @@
         --ff-purple: #a78bfa;
         --ff-accent: @accentCss;
         --ff-radius: 20px;
-        --ff-font: 'DM Sans', 'Segoe UI', sans-serif;
+        --ff-font: 'DM Sans','Segoe UI',sans-serif;
+    }
+
+    [data-theme="light"] {
+        --ff-bg: #f1f5f9;
+        --ff-surface: #ffffff;
+        --ff-surface2: #f8fafc;
+        --ff-border: #e2e8f0;
+        --ff-text: #0f172a;
+        --ff-muted: #64748b;
+        --ff-green: #16a34a;
+        --ff-amber: #b45309;
+        --ff-red: #dc2626;
+        --ff-blue: #2563eb;
+        --ff-purple: #7c3aed;
+        --ff-accent: @accentCss;
+        --ff-radius: 20px;
+        --ff-font: 'DM Sans','Segoe UI',sans-serif;
     }
 
     body {
@@ -53,6 +71,7 @@
         color: var(--ff-text);
         font-family: var(--ff-font);
         margin: 0;
+        transition: background .3s ease, color .3s ease;
     }
 
     .ff-grid {
@@ -143,6 +162,57 @@
     .ff-card {
         animation: fadeInUp 0.5s ease both;
     }
+    /* ── Light mode overrides ─────────────────────────── */
+    [data-theme="light"] .ff-card {
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+        [data-theme="light"] .ff-card:hover {
+            border-color: rgba(37,99,235,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+            transform: translateY(-4px);
+        }
+
+    [data-theme="light"] .ff-feedback {
+        background: rgba(0,0,0,0.02);
+        color: #0f172a;
+    }
+
+        [data-theme="light"] .ff-feedback strong {
+            color: var(--ff-accent);
+        }
+    /* Insight text */
+    [data-theme="light"] [style*="color:#cbd5e1"] {
+        color: #334155 !important;
+    }
+    /* Score ring track */
+    [data-theme="light"] circle[stroke="rgba(255,255,255,0.05)"] {
+        stroke: rgba(0,0,0,0.07);
+    }
+    /* Progress bar track */
+    [data-theme="light"] [style*="background:rgba(255,255,255,0.05)"] {
+        background: rgba(0,0,0,0.06) !important;
+    }
+    /* Hours breakdown bar track */
+    [data-theme="light"] [style*="background:rgba(255,255,255,0.05);border-radius:20px"] {
+        background: rgba(0,0,0,0.06) !important;
+    }
+    /* Level badge */
+    [data-theme="light"] [style*="background:rgba(255,255,255,0.05);padding:8px 20px"] {
+        background: rgba(37,99,235,0.08) !important;
+    }
+    /* Add Subject button text */
+    [data-theme="light"] a[style*="color:white"] {
+        color: #0f172a !important;
+    }
+    /* Page title */
+    [data-theme="light"] h1 {
+        color: #0f172a;
+    }
+    /* Score ring text */
+    [data-theme="light"] text[fill="white"] {
+        fill: #0f172a;
+    }
 </style>
 
 <div style="padding:40px 24px 20px; max-width:1400px; margin:0 auto; display:flex; justify-content:space-between; align-items:flex-end;">
@@ -185,24 +255,133 @@
         </div>
     </div>
 
+    
     <div class="ff-card col-right">
-        <div class="ff-label">AI Analysis & Feedback</div>
-        <div class="ff-feedback" style="margin-bottom:32px;">
-            <strong style="color:var(--ff-accent); display:block; margin-bottom:8px; font-size:18px;">@levelLabel</strong>
+        <div class="ff-label">AI Analysis & Smart Insights</div>
+
+        <!-- Feedback Banner -->
+        <div class="ff-feedback" style="margin-bottom:28px;">
+            <strong style="color:var(--ff-accent);display:block;
+                       margin-bottom:8px;font-size:18px;">
+                @levelLabel
+            </strong>
             @Model.FeedbackMessage
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-            <div style="background:var(--ff-surface2); padding:24px; border-radius:16px;">
-                <div class="ff-label" style="margin-bottom:8px;">Total Study Time</div>
-                <div class="ff-big-stat" style="color:var(--ff-blue)">@Model.TotalHours<span style="font-size:24px; color:var(--ff-muted)">h</span></div>
-                <p style="color:var(--ff-muted); font-size:14px;">Lifetime dedication</p>
+        <!-- Smart Insights List -->
+        <div style="display:flex;flex-direction:column;gap:0;">
+
+            @if (Model.TotalHours == 0)
+            {
+                <div style="display:flex;align-items:flex-start;gap:12px;
+                            padding:14px 0;border-bottom:1px solid var(--ff-border);">
+                    <div style="width:8px;height:8px;border-radius:50%;
+                                background:var(--ff-muted);margin-top:6px;
+                                flex-shrink:0;"></div>
+                    <div style="font-size:14px;color:#cbd5e1;line-height:1.6;">
+                        Log your first session to unlock smart insights! 🚀
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- Insight 1 — Strongest -->
+                <div style="display:flex;align-items:flex-start;gap:12px;
+                            padding:14px 0;border-bottom:1px solid var(--ff-border);">
+                    <div style="width:8px;height:8px;border-radius:50%;
+                                background:var(--ff-green);margin-top:6px;
+                                flex-shrink:0;"></div>
+                    <div style="font-size:14px;color:#cbd5e1;line-height:1.6;">
+                        You study
+                        <strong style="color:#22c55e;">@Model.StrongestSubject</strong>
+                        most consistently —
+                        <strong style="color:#22c55e;">@Model.StrongestHours h</strong>
+                        logged 📚
+                    </div>
+                </div>
+
+                <!-- Insight 2 — Weakest -->
+                <div style="display:flex;align-items:flex-start;gap:12px;
+                            padding:14px 0;border-bottom:1px solid var(--ff-border);">
+                    <div style="width:8px;height:8px;border-radius:50%;
+                                background:var(--ff-amber);margin-top:6px;
+                                flex-shrink:0;"></div>
+                    <div style="font-size:14px;color:#cbd5e1;line-height:1.6;">
+                        <strong style="color:#f59e0b;">@Model.WeakestSubject</strong>
+                        needs more attention —
+                        only <strong style="color:#f59e0b;">
+                            @Model.WeakestHours h
+                        </strong> logged so far ⚠️
+                    </div>
+                </div>
+
+                <!-- Insight 3 — Total hours -->
+                <div style="display:flex;align-items:flex-start;gap:12px;
+                            padding:14px 0;border-bottom:1px solid var(--ff-border);">
+                    <div style="width:8px;height:8px;border-radius:50%;
+                                background:var(--ff-blue);margin-top:6px;
+                                flex-shrink:0;"></div>
+                    <div style="font-size:14px;color:#cbd5e1;line-height:1.6;">
+                        <strong style="color:#60a5fa;">@Model.TotalHours h</strong>
+                        total across
+                        <strong style="color:#60a5fa;">@Model.SubjectCount</strong>
+                        subjects — great dedication! 🎯
+                    </div>
+                </div>
+
+                <!-- Insight 4 — Weekly score -->
+                <div style="display:flex;align-items:flex-start;gap:12px;
+                            padding:14px 0;border-bottom:1px solid var(--ff-border);">
+                    <div style="width:8px;height:8px;border-radius:50%;
+                                background:@accentCss;margin-top:6px;
+                                flex-shrink:0;"></div>
+                    <div style="font-size:14px;color:#cbd5e1;line-height:1.6;">
+                        Weekly focus score:
+                        <strong style="color:@accentCss;">@score%</strong> —
+                        @(score >= 80 ? "Excellent! You're crushing it 🔥"
+                                            : score >= 50 ? "Good progress, keep pushing 💪"
+                                            : "Let's boost this score this week 📈")
+                </div>
             </div>
-            <div style="background:var(--ff-surface2); padding:24px; border-radius:16px;">
-                <div class="ff-label" style="margin-bottom:8px;">Strongest Subject</div>
-                <div style="font-size:32px; font-weight:700; margin:15px 0; color:var(--ff-green)">@Model.StrongestSubject</div>
-                <div style="color:var(--ff-muted); font-size:14px;">@Model.StrongestHours hours logged</div>
-            </div>
+
+                <!-- Insight 5 — Weekly hours -->
+                <div style="display:flex;align-items:flex-start;gap:12px;
+                            padding:14px 0;">
+                    <div style="width:8px;height:8px;border-radius:50%;
+                                background:var(--ff-purple);margin-top:6px;
+                                flex-shrink:0;"></div>
+                    <div style="font-size:14px;color:#cbd5e1;line-height:1.6;">
+                    @if (Model.WeeklyHours >= 15)
+                        {
+                            <span>
+                                This week:
+                                <strong style="color:#a78bfa;">
+                                    @Model.WeeklyHours h
+                                </strong> — you're well above the weekly goal! ⭐
+                            </span>
+                        }
+                        else if (Model.WeeklyHours >= 8)
+                        {
+                            <span>
+                                This week:
+                                <strong style="color:#a78bfa;">
+                                    @Model.WeeklyHours h
+                                </strong> — on track, push a little more 💡
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                Only
+                                <strong style="color:#a78bfa;">
+                                    @Model.WeeklyHours h
+                                </strong> this week —
+                                try to hit at least 10h to stay on track 📅
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
         </div>
     </div>
 

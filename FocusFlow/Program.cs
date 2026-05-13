@@ -1,4 +1,5 @@
-﻿using FocusFlow.Data;
+﻿using FocusFlow.Models;
+using FocusFlow.Data;
 using FocusFlow.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,7 @@ builder.Services.AddDbContext<FocusFlowContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("FocusFlowContext")));
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
     options.Password.RequireDigit = true;

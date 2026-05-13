@@ -1,378 +1,882 @@
 ﻿@{
     ViewData["Title"] = "Home — FocusFlow";
-
-    double totalHours = ViewBag.TotalHours ?? 0.0;
-    int sessions = ViewBag.SessionCount ?? 0;
-    string message = ViewBag.Message ?? "";
-    string alertType = ViewBag.AlertType ?? "secondary";
-    double focusScore = ViewBag.FocusScore ?? 0.0;
     bool isLoggedIn = ViewBag.IsLoggedIn ?? false;
+    string greeting = ViewBag.Greeting ?? "Welcome 👋";
+    double totalHours = ViewBag.TotalHours ?? 0.0;
+    int sessionCount = ViewBag.SessionCount ?? 0;
+    double weekHours = ViewBag.WeekHours ?? 0.0;
+    double focusScore = ViewBag.FocusScore ?? 0.0;
+    double totalTarget = ViewBag.TotalTargetHours ?? 20.0;
+    int streak = ViewBag.Streak ?? 0;
+    string mostStudied = ViewBag.MostStudied ?? "—";
+    string weakest = ViewBag.WeakestSubject ?? "—";
+    int subjectCount = ViewBag.SubjectCount ?? 0;
+    string reminder = ViewBag.Reminder ?? "";
+    string lastSubject = ViewBag.LastSubject ?? "—";
+    string lastDate = ViewBag.LastDate ?? "—";
+    string heatmapJson = ViewBag.HeatmapJson ?? "[]";
+
+    var recentSessions = ViewBag.RecentSessions as List<FocusFlow.Models.StudySession>
+                         ?? new List<FocusFlow.Models.StudySession>();
 }
 
-<style>
-    .hero {
-        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
-        border-radius: 20px;
-        padding: 80px 40px;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-        margin-bottom: 40px;
-    }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -80px;
-            left: -80px;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(59,130,246,0.2), transparent 70%);
-            pointer-events: none;
+@section Styles {
+    <style>
+        /* ── CSS Variables ─────────────────────────────────────────────────────── */
+        :root,
+        [data-theme="dark"] {
+            --bg: #060b18;
+            --card: #111827;
+            --border: rgba(255,255,255,0.07);
+            --blue: #3b82f6;
+            --neon: #60a5fa;
+            --purple: #a78bfa;
+            --green: #22c55e;
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --muted: #64748b;
+            --text: #f1f5f9;
+            --subtext: #cbd5e1;
+            --radius: 16px;
         }
 
-        .hero::after {
-            content: '';
-            position: absolute;
-            bottom: -80px;
-            right: -80px;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%);
-            pointer-events: none;
+        [data-theme="light"] {
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --blue: #2563eb;
+            --neon: #1d4ed8;
+            --purple: #7c3aed;
+            --green: #16a34a;
+            --amber: #b45309;
+            --red: #dc2626;
+            --muted: #64748b;
+            --text: #0f172a;
+            --subtext: #334155;
+            --radius: 16px;
         }
 
-    .hero-title {
-        font-size: clamp(28px, 5vw, 52px);
-        font-weight: 800;
-        color: #fff;
-        letter-spacing: -.03em;
-        line-height: 1.15;
-        margin-bottom: 16px;
-    }
-
-        .hero-title span {
-            color: #60a5fa;
+        body {
+            background: var(--bg);
+            color: var(--text);
+            transition: background .3s, color .3s;
         }
 
-    .hero-sub {
-        font-size: 17px;
-        color: rgba(255,255,255,0.65);
-        max-width: 520px;
-        margin: 0 auto 32px;
-        line-height: 1.7;
-    }
+        /* ── Layout ─────────────────────────────────────────────────────────────── */
+        .home-wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px 80px;
+        }
 
-    .hero-btns {
-        display: flex;
-        gap: 14px;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
+        /* ── Card ───────────────────────────────────────────────────────────────── */
+        .g-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            transition: border-color .2s, transform .2s, box-shadow .2s;
+            position: relative;
+            overflow: hidden;
+        }
 
-    .btn-hero-primary {
-        background: #2563eb;
-        color: #fff;
-        font-weight: 700;
-        font-size: 15px;
-        padding: 13px 30px;
-        border-radius: 10px;
-        text-decoration: none;
-        border: none;
-        transition: background .2s, transform .15s;
-    }
+            .g-card:hover {
+                border-color: rgba(96,165,250,0.3);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            }
 
-        .btn-hero-primary:hover {
-            background: #1d4ed8;
+            .g-card::before {
+                content: '';
+                position: absolute;
+                top: -60px;
+                right: -60px;
+                width: 160px;
+                height: 160px;
+                border-radius: 50%;
+                background: rgba(96,165,250,0.05);
+                pointer-events: none;
+            }
+
+        /* ── Greeting bar ───────────────────────────────────────────────────────── */
+        .greeting-bar {
+            background: linear-gradient(135deg,#0d1a35,#111827);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        [data-theme="light"] .greeting-bar {
+            background: linear-gradient(135deg,#1e3a8a,#1e40af);
+            border-color: #1e40af;
+        }
+
+        .greeting-text {
+            font-size: 22px;
+            font-weight: 800;
             color: #fff;
-            transform: translateY(-2px);
         }
 
-    .btn-hero-secondary {
-        background: rgba(255,255,255,0.08);
-        color: #fff;
-        font-weight: 600;
-        font-size: 15px;
-        padding: 13px 30px;
-        border-radius: 10px;
-        text-decoration: none;
-        border: 1px solid rgba(255,255,255,0.15);
-        transition: background .2s, transform .15s;
-    }
+        .greeting-sub {
+            font-size: 13px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 3px;
+        }
 
-        .btn-hero-secondary:hover {
-            background: rgba(255,255,255,0.14);
+        /* ── Stat grid ──────────────────────────────────────────────────────────── */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        @@media(max-width:900px) {
+            .stat-grid {
+                grid-template-columns: repeat(2,1fr);
+            }
+        }
+
+        @@media(max-width:500px) {
+            .stat-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .stat-card {
+            padding: 22px 20px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .stat-val {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -.03em;
+            line-height: 1;
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .stat-bar-track {
+            height: 4px;
+            border-radius: 99px;
+            background: rgba(0,0,0,0.06);
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        [data-theme="dark"] .stat-bar-track {
+            background: rgba(255,255,255,0.07);
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width .8s cubic-bezier(.4,0,.2,1);
+        }
+
+        /* ── Streak ─────────────────────────────────────────────────────────────── */
+        .streak-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(239,68,68,0.12);
+            border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 99px;
+            padding: 5px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fca5a5;
+        }
+
+        [data-theme="light"] .streak-badge {
+            background: rgba(220,38,38,0.08);
+            border-color: rgba(220,38,38,0.2);
+            color: #dc2626;
+        }
+
+        .fire {
+            animation: fireAnim 1s ease-in-out infinite alternate;
+        }
+
+        @@keyframes fireAnim {
+            from {
+                transform: scale(1) rotate(-3deg);
+            }
+
+            to {
+                transform: scale(1.2) rotate(3deg);
+            }
+        }
+
+        /* ── Two / Three col ────────────────────────────────────────────────────── */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .three-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        @@media(max-width:800px) {
+            .two-col, .three-col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── Pomodoro ───────────────────────────────────────────────────────────── */
+        .pomo-card {
+            padding: 28px;
+            text-align: center;
+        }
+
+        .pomo-ring-wrap {
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .pomo-time {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .pomo-label {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .pomo-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 10px 22px;
+            border-radius: 99px;
+            border: none;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity .2s, transform .15s;
+        }
+
+            .pomo-btn:hover {
+                opacity: .85;
+                transform: scale(1.04);
+            }
+
+        .pomo-btn-start {
+            background: var(--green);
             color: #fff;
-            transform: translateY(-2px);
         }
 
-    .feat-card {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 32px 24px;
-        text-align: center;
-        transition: box-shadow .2s, transform .2s;
-        height: 100%;
-    }
-
-        .feat-card:hover {
-            box-shadow: 0 8px 32px rgba(0,0,0,0.10);
-            transform: translateY(-4px);
+        .pomo-btn-reset {
+            background: rgba(0,0,0,0.06);
+            color: var(--muted);
+            border: 1px solid var(--border);
         }
 
-    .feat-icon {
-        width: 58px;
-        height: 58px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 26px;
-        margin: 0 auto 18px;
-    }
-
-    .feat-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #0f172a;
-        margin-bottom: 8px;
-    }
-
-    .feat-desc {
-        font-size: 14px;
-        color: #64748b;
-        line-height: 1.6;
-    }
-
-    .stat-card {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 28px;
-        transition: box-shadow .2s, transform .2s;
-    }
-
-        .stat-card:hover {
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-            transform: translateY(-2px);
+        [data-theme="dark"] .pomo-btn-reset {
+            background: rgba(255,255,255,0.07);
         }
 
-    .stat-val {
-        font-size: 42px;
-        font-weight: 800;
-        letter-spacing: -.03em;
-        line-height: 1;
-    }
-
-    .stat-label {
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        color: #64748b;
-        margin-top: 6px;
-    }
-
-    .sec-title {
-        font-size: 22px;
-        font-weight: 800;
-        color: #0f172a;
-        letter-spacing: -.02em;
-    }
-
-    .sec-sub {
-        font-size: 14px;
-        color: #64748b;
-        margin-top: 4px;
-    }
-
-    .fade-up {
-        animation: fadeUp .5s ease both;
-    }
-
-        .fade-up:nth-child(2) {
-            animation-delay: .08s;
+        /* ── Insights ───────────────────────────────────────────────────────────── */
+        .insight-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
         }
 
-        .fade-up:nth-child(3) {
-            animation-delay: .16s;
+            .insight-item:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+        .insight-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 6px;
+            flex-shrink: 0;
         }
 
-    @@keyframes fadeUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
+        .insight-text {
+            font-size: 13px;
+            color: var(--subtext);
+            line-height: 1.6;
         }
 
-        to {
-            opacity: 1;
-            transform: translateY(0);
+        /* ── Sessions ───────────────────────────────────────────────────────────── */
+        .sess-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
         }
-    }
-</style>
 
-<!-- Alert — بس لو logged in -->
-@if (isLoggedIn)
-{
-    <div class="alert alert-@alertType d-flex align-items-center gap-2
-                    rounded-3 border-0 shadow-sm mb-4"
-         style="font-weight:600; font-size:14px;">
-        <i class="bi bi-info-circle-fill fs-5"></i>
-        @message
-    </div>
+            .sess-row:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+        .sess-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(96,165,250,0.12);
+            color: var(--neon);
+        }
+
+        [data-theme="light"] .sess-badge {
+            background: rgba(37,99,235,0.1);
+            color: #1d4ed8;
+        }
+
+        /* ── Heatmap ────────────────────────────────────────────────────────────── */
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(7,13px);
+            gap: 3px;
+            margin-top: 12px;
+        }
+
+        .hm-cell {
+            width: 13px;
+            height: 13px;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.05);
+            transition: transform .15s;
+            cursor: default;
+        }
+
+        [data-theme="light"] .hm-cell {
+            background: rgba(0,0,0,0.06);
+        }
+
+        .hm-cell:hover {
+            transform: scale(1.3);
+            z-index: 5;
+        }
+
+        /* ── Reminder ───────────────────────────────────────────────────────────── */
+        .reminder-card {
+            background: rgba(245,158,11,0.08);
+            border: 1px solid rgba(245,158,11,0.2);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        [data-theme="light"] .reminder-card {
+            background: rgba(180,83,9,0.08);
+            border-color: rgba(180,83,9,0.2);
+            color: #b45309;
+        }
+
+        /* ── Hero guest ─────────────────────────────────────────────────────────── */
+        .hero-guest {
+            background: linear-gradient(135deg,#060b18 0%,#0d1a35 50%,#060b18 100%);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 90px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+
+        [data-theme="light"] .hero-guest {
+            background: linear-gradient(135deg,#1e3a8a 0%,#1e40af 50%,#1e3a8a 100%);
+        }
+
+        .hero-title {
+            font-size: clamp(30px,5vw,56px);
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -.03em;
+            line-height: 1.12;
+            margin-bottom: 18px;
+        }
+
+            .hero-title span {
+                color: var(--neon);
+            }
+
+        /* ── Labels ─────────────────────────────────────────────────────────────── */
+        .sec-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .sec-title-lg {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        /* ── Animations ─────────────────────────────────────────────────────────── */
+        .fade-up {
+            animation: fadeUp .5s ease both;
+        }
+
+            .fade-up:nth-child(1) {
+                animation-delay: .00s;
+            }
+
+            .fade-up:nth-child(2) {
+                animation-delay: .07s;
+            }
+
+            .fade-up:nth-child(3) {
+                animation-delay: .14s;
+            }
+
+        @@keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── Quote card light fix ────────────────────────────────────────────────── */
+        [data-theme="light"] #quoteText {
+            color: var(--text) !important;
+        }
+
+        [data-theme="light"] #quoteAuthor {
+            color: var(--muted) !important;
+        }
+
+        /* ── Insights card light fix ─────────────────────────────────────────────── */
+        [data-theme="light"] .insight-text {
+            color: var(--subtext);
+        }
+    </style>
 }
 
-<!-- ── HERO ── -->
-<div class="hero fade-up">
-    <div style="position:relative; z-index:1;">
-        <div style="display:inline-block; background:rgba(96,165,250,0.12);
-                    border:1px solid rgba(96,165,250,0.25); border-radius:99px;
-                    padding:5px 16px; font-size:12px; font-weight:600;
-                    color:#93c5fd; letter-spacing:.06em;
-                    text-transform:uppercase; margin-bottom:20px;">
-            📚 Study Smarter. Focus Better.
-        </div>
-        <h1 class="hero-title">
-            Manage Your Study<br>Time <span>Smarter</span>
-        </h1>
-        <p class="hero-sub">
-            Track subjects, log study sessions, and get smart focus insights
-            — all in one place built for serious students.
-        </p>
-        <div class="hero-btns">
-            <a asp-controller="Subject" asp-action="Create" class="btn-hero-primary">
-                <i class="bi bi-rocket-takeoff-fill me-2"></i>Get Started
-            </a>
-            <a asp-controller="Dashboard" asp-action="Index" class="btn-hero-secondary">
-                <i class="bi bi-speedometer2 me-2"></i>View Dashboard
-            </a>
-        </div>
-    </div>
-</div>
+<div class="home-wrap">
+    @if (isLoggedIn)
+    {
+        <!-- ── REMINDER ──────────────────────────────────────────────────────── -->
+        @if (!string.IsNullOrEmpty(reminder))
+        {
+            <div class="reminder-card fade-up">
+                <i class="bi bi-bell-fill" style="font-size:18px;flex-shrink:0;"></i>
+                <span>@reminder</span>
+            </div>
+        }
 
-<!-- ── FEATURES ── -->
-<div class="mb-5">
-    <div class="mb-4">
-        <div class="sec-title">Everything you need to stay on track</div>
-        <div class="sec-sub">Three powerful tools built into one clean interface</div>
-    </div>
-    <div class="row g-4">
-        <div class="col-md-4 fade-up">
-            <div class="feat-card">
-                <div class="feat-icon" style="background:#dbeafe;">
-                    <i class="bi bi-journal-bookmark-fill" style="color:#2563eb;"></i>
-                </div>
-                <div class="feat-title">Track Subjects</div>
-                <div class="feat-desc">
-                    Add all your subjects, set target hours, and monitor
-                    your progress with beautiful visual bars.
+        <!-- ── GREETING BAR ──────────────────────────────────────────────────── -->
+        <div class="greeting-bar fade-up">
+            <div>
+                <div class="greeting-text">@greeting</div>
+                <div class="greeting-sub">
+                    Last session: <strong style="color:rgba(255,255,255,0.9);">@lastSubject</strong> on @lastDate
                 </div>
             </div>
-        </div>
-        <div class="col-md-4 fade-up">
-            <div class="feat-card">
-                <div class="feat-icon" style="background:#dcfce7;">
-                    <i class="bi bi-clock-history" style="color:#16a34a;"></i>
-                </div>
-                <div class="feat-title">Log Study Sessions</div>
-                <div class="feat-desc">
-                    Record every session with subject, hours, and date.
-                    Build a complete history of your study habits.
-                </div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                @if (streak > 0)
+                {
+                    <div class="streak-badge"><span class="fire">🔥</span> @streak day streak!</div>
+                }
+                <a asp-controller="StudySession" asp-action="Log"
+                   style="background:var(--blue);color:#fff;font-weight:700;font-size:13px;
+                          padding:10px 20px;border-radius:10px;text-decoration:none;
+                          display:inline-flex;align-items:center;gap:6px;">
+                    <i class="bi bi-plus-lg"></i> Log Session
+                </a>
             </div>
         </div>
-        <div class="col-md-4 fade-up">
-            <div class="feat-card">
-                <div class="feat-icon" style="background:#f3e8ff;">
-                    <i class="bi bi-graph-up-arrow" style="color:#7c3aed;"></i>
-                </div>
-                <div class="feat-title">Smart Focus Insights</div>
-                <div class="feat-desc">
-                    Get an AI-powered focus score and personalized feedback
-                    to improve your weekly study performance.
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- ✅ Stats — بس لو logged in -->
-@if (isLoggedIn)
-{
-    <div class="mb-2">
-        <div class="mb-4">
-            <div class="sec-title">Your Progress at a Glance</div>
-            <div class="sec-sub">Live data from your study sessions</div>
+        <!-- ── STAT CARDS ────────────────────────────────────────────────────── -->
+        <div class="stat-grid">
+            <div class="g-card stat-card fade-up">
+                <div class="stat-label">Total Hours</div>
+                <div class="stat-val count-up" style="color:var(--blue);" data-target="@totalHours">0</div>
+                <div class="stat-sub">hours studied all-time</div>
+                <div class="stat-bar-track">
+                    <div class="stat-bar-fill" style="width:@(Math.Min(totalHours / 80 * 100, 100))%;background:var(--blue);"></div>
+                </div>
+            </div>
+            <div class="g-card stat-card fade-up">
+                <div class="stat-label">Sessions</div>
+                <div class="stat-val count-up" style="color:var(--purple);" data-target="@sessionCount">0</div>
+                <div class="stat-sub">@subjectCount subjects tracked</div>
+                <div class="stat-bar-track">
+                    <div class="stat-bar-fill" style="width:@(Math.Min(sessionCount / 50.0 * 100, 100))%;background:var(--purple);"></div>
+                </div>
+            </div>
+            <div class="g-card stat-card fade-up">
+                <div class="stat-label">This Week</div>
+                <div class="stat-val count-up" style="color:var(--green);" data-target="@weekHours">0</div>
+                <div class="stat-sub">of @totalTarget h target</div>
+                <div class="stat-bar-track">
+                    <div class="stat-bar-fill" style="width:@(Math.Min(weekHours / totalTarget * 100, 100))%;background:var(--green);"></div>
+                </div>
+            </div>
         </div>
-        <div class="row g-4">
-            <div class="col-md-3 col-6">
-                <div class="stat-card">
-                    <div class="stat-val" style="color:#2563eb;">
-                        @totalHours<span style="font-size:20px;color:#94a3b8;">h</span>
-                    </div>
-                    <div class="stat-label">Total Hours</div>
+
+        <!-- ── POMODORO + QUOTE ──────────────────────────────────────────────── -->
+        <div class="two-col">
+            <div class="g-card pomo-card">
+                <div class="sec-label">Pomodoro Timer</div>
+                <div class="pomo-ring-wrap">
+                    <svg width="140" height="140" viewBox="0 0 120 120">
+                        <circle cx="60" cy="60" r="54" fill="none" stroke="var(--border)" stroke-width="8" />
+                        <circle id="pomoRing" cx="60" cy="60" r="54" fill="none"
+                                stroke="var(--blue)" stroke-width="8" stroke-linecap="round"
+                                stroke-dasharray="339 339" transform="rotate(-90 60 60)"
+                                style="transition:stroke-dasharray .9s linear;" />
+                    </svg>
+                    <div class="pomo-time" id="pomoTime">25:00</div>
+                </div>
+                <div class="pomo-label" id="pomoLabel">Focus Session</div>
+                <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;">
+                    <button class="pomo-btn pomo-btn-start" onclick="togglePomo()">
+                        <i class="bi bi-play-fill" id="pomoIcon"></i>
+                        <span id="pomoBtnText">Start</span>
+                    </button>
+                    <button class="pomo-btn pomo-btn-reset" onclick="resetPomo()">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </button>
                 </div>
             </div>
-            <div class="col-md-3 col-6">
-                <div class="stat-card">
-                    <div class="stat-val" style="color:#7c3aed;">@sessions</div>
-                    <div class="stat-label">Sessions Logged</div>
-                </div>
+
+            <div class="g-card" style="padding:28px;display:flex;flex-direction:column;justify-content:center;">
+                <div class="sec-label">Daily Motivation</div>
+                <div id="quoteText" style="font-size:15px;font-style:italic;color:var(--text);line-height:1.7;">Loading...</div>
+                <div id="quoteAuthor" style="font-size:12px;color:var(--muted);margin-top:8px;"></div>
+                <button onclick="nextQuote()"
+                        style="margin-top:16px;background:rgba(167,139,250,0.1);
+                               border:1px solid rgba(167,139,250,0.2);color:var(--purple);
+                               border-radius:8px;padding:7px 14px;font-size:12px;
+                               font-weight:600;cursor:pointer;width:fit-content;">
+                    <i class="bi bi-arrow-clockwise me-1"></i>New Quote
+                </button>
             </div>
-            <div class="col-md-3 col-6">
-                <div class="stat-card">
-                    <div class="stat-val" style="color:#16a34a;">
-                        @focusScore<span style="font-size:20px;color:#94a3b8;">%</span>
+        </div>
+
+        <!-- ── INSIGHTS + RECENT SESSIONS ───────────────────────────────────── -->
+        <div class="two-col">
+
+            <a asp-controller="Dashboard" asp-action="Index" style="text-decoration:none;">
+                <div class="g-card" style="padding:24px;cursor:pointer;height:100%;
+                                           border:1px solid rgba(167,139,250,0.2);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                        <div>
+                            <div class="sec-label">Productivity Insights</div>
+                            <div class="sec-title-lg">🤖 Smart Analysis</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;
+                                    background:rgba(167,139,250,0.1);
+                                    border:1px solid rgba(167,139,250,0.2);
+                                    padding:8px 16px;border-radius:99px;">
+                            <span style="font-size:12px;font-weight:700;color:var(--purple);">View Dashboard</span>
+                            <i class="bi bi-arrow-right" style="color:var(--purple);font-size:13px;"></i>
+                        </div>
                     </div>
-                    <div class="stat-label">Focus Score</div>
+
+                    @if (totalHours == 0)
+                    {
+                        <div style="text-align:center;padding:24px 0;">
+                            <div style="font-size:36px;margin-bottom:12px;">📊</div>
+                            <div style="font-size:14px;color:var(--muted);line-height:1.6;">
+                                Log your first session to unlock<br>smart insights and analysis!
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="insight-item">
+                            <div class="insight-dot" style="background:var(--green);"></div>
+                            <div class="insight-text">
+                                Top subject: <strong style="color:var(--green);">@mostStudied</strong> — keep it up! 📚
+                            </div>
+                        </div>
+                        <div class="insight-item">
+                            <div class="insight-dot" style="background:var(--amber);"></div>
+                            <div class="insight-text">
+                                <strong style="color:var(--amber);">@weakest</strong> needs more attention ⚠️
+                            </div>
+                        </div>
+                        <div class="insight-item">
+                            <div class="insight-dot" style="background:var(--blue);"></div>
+                            <div class="insight-text">
+                                Weekly score: <strong style="color:var(--neon);">@focusScore%</strong> —
+                                @(focusScore >= 80 ? "Excellent! 🔥" : focusScore >= 50 ? "Good progress 💪" : "Keep pushing 📈")
+                            </div>
+                        </div>
+                        @if (streak >= 3)
+                        {
+                            <div class="insight-item">
+                                <div class="insight-dot" style="background:var(--red);"></div>
+                                <div class="insight-text">
+                                    🔥 <strong style="color:var(--red);">@streak-day streak!</strong> Consistency is your superpower!
+                                </div>
+                            </div>
+                        }
+                        <div style="margin-top:20px;padding:14px 18px;
+                                        background:rgba(167,139,250,0.06);
+                                        border:1px solid rgba(167,139,250,0.15);
+                                        border-radius:10px;display:flex;align-items:center;
+                                        justify-content:space-between;">
+                            <span style="font-size:13px;color:var(--muted);">Full analysis, score ring & breakdown</span>
+                            <i class="bi bi-chevron-right" style="color:var(--purple);"></i>
+                        </div>
+                    }
                 </div>
-            </div>
-            <div class="col-md-3 col-6">
-                <div class="stat-card" style="background:linear-gradient(135deg,#1e3a5f,#0f172a);
-                                                  border-color:transparent;">
-                    <div style="font-size:13px;color:rgba(255,255,255,0.6);
-                                    font-weight:600;margin-bottom:10px;">
-                        Ready to study?
+            </a>
+
+            <div class="g-card" style="padding:24px;">
+                <div class="sec-label">Recent Activity</div>
+                <div class="sec-title-lg" style="margin-bottom:16px;">📋 Last Sessions</div>
+                @if (!recentSessions.Any())
+                {
+                    <div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">
+                        No sessions yet — log your first one!
                     </div>
-                    <a asp-controller="StudySession" asp-action="Log"
-                       style="display:inline-flex;align-items:center;gap:6px;
-                                  background:#2563eb;color:#fff;text-decoration:none;
-                                  font-size:13px;font-weight:700;padding:9px 18px;
-                                  border-radius:8px;">
-                        <i class="bi bi-plus-lg"></i> Log Session
+                }
+                else
+                {
+                    @foreach (var s in recentSessions)
+                    {
+                        <div class="sess-row">
+                            <div>
+                                <div style="font-weight:600;color:var(--text);">@s.SubjectName</div>
+                                <div style="font-size:11px;color:var(--muted);margin-top:2px;">@s.Date.ToString("dd MMM yyyy")</div>
+                            </div>
+                            <span class="sess-badge">@s.Hours h</span>
+                        </div>
+                    }
+                }
+                <a asp-controller="StudySession" asp-action="Index"
+                   style="display:inline-flex;align-items:center;gap:5px;margin-top:16px;
+                          font-size:12px;font-weight:600;color:var(--neon);text-decoration:none;">
+                    View all sessions <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- ── HEATMAP ───────────────────────────────────────────────────────── -->
+        <div class="g-card" style="padding:24px;margin-bottom:24px;">
+            <div class="sec-label">Study Heatmap</div>
+            <div class="sec-title-lg">📅 Last 7 Weeks</div>
+            <div class="heatmap-grid" id="heatmapGrid"></div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:10px;">
+                <span style="font-size:11px;color:var(--muted);">Less</span>
+                <div style="width:12px;height:12px;border-radius:2px;background:rgba(59,130,246,0.1);border:1px solid var(--border);"></div>
+                <div style="width:12px;height:12px;border-radius:2px;background:rgba(59,130,246,0.3);"></div>
+                <div style="width:12px;height:12px;border-radius:2px;background:rgba(59,130,246,0.6);"></div>
+                <div style="width:12px;height:12px;border-radius:2px;background:#3b82f6;"></div>
+                <span style="font-size:11px;color:var(--muted);">More</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- ── GUEST HERO ─────────────────────────────────────────────────────── -->
+        <div class="hero-guest">
+            <div style="position:relative;z-index:1;">
+                <div style="display:inline-block;background:rgba(96,165,250,0.15);
+                            border:1px solid rgba(96,165,250,0.3);border-radius:99px;
+                            padding:5px 16px;font-size:12px;font-weight:600;color:#93c5fd;
+                            letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px;">
+                    📚 Study Smarter. Focus Better.
+                </div>
+                <h1 class="hero-title">Manage Your Study<br>Time <span>Smarter</span></h1>
+                <p style="font-size:17px;color:rgba(255,255,255,0.65);max-width:520px;margin:0 auto 32px;line-height:1.7;">
+                    Track subjects, log sessions, and get smart focus insights — all in one place built for serious students.
+                </p>
+                <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+                    <a asp-controller="Account" asp-action="Register"
+                       style="background:#2563eb;color:#fff;font-weight:700;font-size:15px;
+                              padding:13px 30px;border-radius:10px;text-decoration:none;">
+                        <i class="bi bi-rocket-takeoff-fill me-2"></i>Get Started
+                    </a>
+                    <a asp-controller="Account" asp-action="Login"
+                       style="background:rgba(255,255,255,0.1);color:#fff;font-weight:600;
+                              font-size:15px;padding:13px 30px;border-radius:10px;
+                              text-decoration:none;border:1px solid rgba(255,255,255,0.2);">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Login
                     </a>
                 </div>
             </div>
         </div>
-    </div>
-}
-else
-{
-    <!--  لو مش logged in -->
-    <div class="text-center py-4">
-        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;
-                        padding:40px;max-width:480px;margin:0 auto;">
-            <div style="font-size:36px;margin-bottom:12px;">🎯</div>
-            <div style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:8px;">
-                Ready to start tracking?
+
+        <div class="three-col">
+            <div class="g-card" style="padding:28px;text-align:center;">
+                <div style="font-size:32px;margin-bottom:12px;">📖</div>
+                <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;">Track Subjects</div>
+                <div style="font-size:13px;color:var(--muted);line-height:1.6;">Add subjects, set target hours, and monitor your progress visually.</div>
             </div>
-            <div style="font-size:14px;color:#64748b;margin-bottom:24px;">
-                Create an account to track your study sessions and improve your focus.
+            <div class="g-card" style="padding:28px;text-align:center;">
+                <div style="font-size:32px;margin-bottom:12px;">⏱️</div>
+                <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;">Log Sessions</div>
+                <div style="font-size:13px;color:var(--muted);line-height:1.6;">Record every study session and build a complete history of your habits.</div>
             </div>
-            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-                <a asp-controller="Account" asp-action="Register"
-                   style="background:#2563eb;color:#fff;font-weight:700;font-size:14px;
-                              padding:11px 24px;border-radius:9px;text-decoration:none;">
-                    <i class="bi bi-person-plus me-1"></i> Create Account
-                </a>
-                <a asp-controller="Account" asp-action="Login"
-                   style="background:#f1f5f9;color:#0f172a;font-weight:600;font-size:14px;
-                              padding:11px 24px;border-radius:9px;text-decoration:none;
-                              border:1px solid #e2e8f0;">
-                    <i class="bi bi-box-arrow-in-right me-1"></i> Login
-                </a>
+            <div class="g-card" style="padding:28px;text-align:center;">
+                <div style="font-size:32px;margin-bottom:12px;">📊</div>
+                <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;">Smart Insights</div>
+                <div style="font-size:13px;color:var(--muted);line-height:1.6;">Get a weekly focus score and personalized feedback to improve performance.</div>
             </div>
         </div>
-    </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // ── Quotes ──────────────────────────────────────────────────────────────
+        const quotes = [
+            { text:"The secret of getting ahead is getting started.", author:"Mark Twain" },
+            { text:"It always seems impossible until it's done.", author:"Nelson Mandela" },
+            { text:"Don't watch the clock; do what it does — keep going.", author:"Sam Levenson" },
+            { text:"The expert in anything was once a beginner.", author:"Helen Hayes" },
+            { text:"Success is the sum of small efforts, repeated day in and day out.", author:"Robert Collier" },
+            { text:"Believe you can and you're halfway there.", author:"Theodore Roosevelt" },
+            { text:"Your future self is watching you right now through your memories.", author:"Aubrey de Grey" },
+            { text:"Study hard, for the well is deep, and our brains are shallow.", author:"Richard Baxter" },
+        ];
+        let qIdx = Math.floor(Math.random() * quotes.length);
+        function showQuote() {
+            const el = document.getElementById('quoteText');
+            const au = document.getElementById('quoteAuthor');
+            if (!el) return;
+            el.textContent = quotes[qIdx].text;
+            if (au) au.textContent = '— ' + quotes[qIdx].author;
+        }
+        function nextQuote() { qIdx = (qIdx + 1) % quotes.length; showQuote(); }
+        showQuote();
+
+        // ── Count-up ─────────────────────────────────────────────────────────────
+        document.querySelectorAll('.count-up').forEach(el => {
+            const target = parseFloat(el.dataset.target) || 0;
+            const isInt  = Number.isInteger(target);
+            let cur = 0, inc = target / (900 / 16);
+            const t = setInterval(() => {
+                cur = Math.min(cur + inc, target);
+                el.textContent = isInt ? Math.round(cur) : cur.toFixed(1);
+                if (cur >= target) clearInterval(t);
+            }, 16);
+        });
+
+        // ── Pomodoro ─────────────────────────────────────────────────────────────
+        let pomoRunning = false, pomoInterval = null;
+        let pomoSeconds = 25*60, pomoTotal = 25*60, pomoBreak = false;
+
+        function updatePomoDisplay() {
+            const m = Math.floor(pomoSeconds/60).toString().padStart(2,'0');
+            const s = (pomoSeconds%60).toString().padStart(2,'0');
+            const el = document.getElementById('pomoTime');
+            if (el) el.textContent = m+':'+s;
+            const ring = document.getElementById('pomoRing');
+            if (ring) ring.style.strokeDasharray = Math.round(pomoSeconds/pomoTotal*339)+' 339';
+        }
+
+        function togglePomo() {
+            if (pomoRunning) {
+                clearInterval(pomoInterval); pomoRunning = false;
+                document.getElementById('pomoIcon').className = 'bi bi-play-fill';
+                document.getElementById('pomoBtnText').textContent = 'Start';
+            } else {
+                pomoRunning = true;
+                document.getElementById('pomoIcon').className = 'bi bi-pause-fill';
+                document.getElementById('pomoBtnText').textContent = 'Pause';
+                pomoInterval = setInterval(() => {
+                    if (pomoSeconds > 0) { pomoSeconds--; updatePomoDisplay(); }
+                    else {
+                        clearInterval(pomoInterval); pomoRunning = false;
+                        pomoBreak = !pomoBreak;
+                        pomoSeconds = pomoTotal = pomoBreak ? 5*60 : 25*60;
+                        document.getElementById('pomoLabel').textContent = pomoBreak ? 'Break Time!' : 'Focus Session';
+                        updatePomoDisplay();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetPomo() {
+            clearInterval(pomoInterval); pomoRunning = false; pomoBreak = false;
+            pomoSeconds = pomoTotal = 25*60; updatePomoDisplay();
+            document.getElementById('pomoIcon').className = 'bi bi-play-fill';
+            document.getElementById('pomoBtnText').textContent = 'Start';
+            document.getElementById('pomoLabel').textContent = 'Focus Session';
+        }
+
+        // ── Heatmap ──────────────────────────────────────────────────────────────
+        (function buildHeatmap() {
+            const grid = document.getElementById('heatmapGrid');
+            if (!grid) return;
+            let data = [];
+            try { data = JSON.parse('@Html.Raw(heatmapJson)'); } catch(e) {}
+            const maxH = Math.max(...data.map(d => d.hours), 1);
+            const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+            data.forEach(d => {
+                const cell = document.createElement('div');
+                cell.className = 'hm-cell';
+                const pct = d.hours / maxH;
+                cell.style.background = d.hours === 0
+                    ? (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)')
+                    : pct < 0.33 ? 'rgba(59,130,246,0.25)'
+                    : pct < 0.66 ? 'rgba(59,130,246,0.55)'
+                    : '#3b82f6';
+                cell.title = d.date + ': ' + d.hours + 'h';
+                grid.appendChild(cell);
+            });
+        })();
+    </script>
 }

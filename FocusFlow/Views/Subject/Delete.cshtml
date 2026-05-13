@@ -1,0 +1,39 @@
+﻿@model FocusFlow.Models.Subject
+
+@{
+    ViewData["Title"] = "Delete Subject";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 p-md-5 text-center">
+
+                    <div class="mb-3" style="font-size:3rem;">🗑️</div>
+                    <h4 class="fw-bold mb-1">Delete Subject?</h4>
+                    <p class="text-muted small mb-4">
+                        You are about to permanently delete
+                        <strong>@Model.Name</strong>
+                        and <span class="text-danger fw-semibold">all its study session history</span>.
+                        This cannot be undone.
+                    </p>
+
+                    <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="submit" class="btn btn-danger btn-lg rounded-3 px-4">
+                                <i class="bi bi-trash3-fill me-1"></i> Yes, Delete
+                            </button>
+                            <a asp-action="Index"
+                               class="btn btn-outline-secondary btn-lg rounded-3 px-4">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

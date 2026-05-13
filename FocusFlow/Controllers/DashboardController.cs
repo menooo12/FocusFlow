@@ -50,7 +50,9 @@ namespace FocusFlow.Controllers
                 .Where(s => s.UserId == userId)
                 .ToListAsync();
 
+
             const double targetWeeklyHours = 20.0;
+
 
             int daysSinceSaturday = ((int)DateTime.Today.DayOfWeek + 1) % 7;
             var startOfWeek = DateTime.Today.AddDays(-daysSinceSaturday);

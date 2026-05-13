@@ -1,0 +1,70 @@
+﻿@{
+    ViewData["Title"] = "Settings";
+    int currentTarget = ViewBag.WeeklyTargetHours ?? 20;
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 p-md-5">
+
+                    <div class="mb-4">
+                        <h3 class="fw-bold mb-1">⚙️ Settings</h3>
+                        <p class="text-muted small mb-0">Customize your weekly study goal</p>
+                    </div>
+
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success rounded-3 mb-4">
+                            ✅ @TempData["Success"]
+                        </div>
+                    }
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger rounded-3 mb-4">
+                            ⚠️ @Html.ValidationSummary()
+                        </div>
+                    }
+
+                    <form asp-action="Index" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold small text-uppercase text-muted">
+                                Weekly Target Hours
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <input type="number"
+                                       name="weeklyTargetHours"
+                                       value="@currentTarget"
+                                       min="1" max="168"
+                                       class="form-control rounded-start-3" />
+                                <span class="input-group-text bg-light text-muted rounded-end-3 border-start-0">
+                                    hours / week
+                                </span>
+                            </div>
+                            <div class="form-text text-muted mt-2">
+                                How many hours do you want to study per week? (1–168)
+                            </div>
+                        </div>
+
+                        <hr class="text-muted opacity-25 mb-4" />
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success btn-lg flex-grow-1 rounded-3">
+                                <i class="bi bi-check-lg me-1"></i> Save Settings
+                            </button>
+                            <a asp-controller="Home" asp-action="Index"
+                               class="btn btn-outline-secondary btn-lg rounded-3 px-4">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

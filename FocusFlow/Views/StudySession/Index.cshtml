@@ -5,154 +5,937 @@
     var total = Model.Sum(s => s.Hours);
     var avg = Model.Count > 0 ? Math.Round(total / Model.Count, 1) : 0;
     var lastDate = Model.OrderByDescending(s => s.Date).FirstOrDefault()?.Date;
+    var deepCount = Model.Count(s => s.Hours >= 4);
+    var focusCount = Model.Count(s => s.Hours >= 2 && s.Hours < 4);
+    var quickCount = Model.Count(s => s.Hours < 2);
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="fw-bold mb-1" style="letter-spacing:-.02em;">Session History</h2>
-        <p class="text-muted mb-0 small">Every study session you've logged</p>
-    </div>
-    <a asp-action="Log" class="btn btn-primary rounded-pill px-4">
-        <i class="bi bi-plus-lg me-1"></i> Log Session
-    </a>
-</div>
+@section Styles {
+    <style>
+        [data-theme="dark"] {
+            --void: #080c17;
+            --glass: rgba(255,255,255,0.04);
+            --rim: rgba(255,255,255,0.08);
+            --txt: #e8eaf0;
+            --muted: #5a6480;
+            --azure: #3d7fff;
+            --azure-g: #5b9bff;
+            --jade: #10b981;
+            --amber: #f59e0b;
+            --violet: #8b5cf6;
+            --r: 14px;
+            --r-lg: 20px;
+            --font: 'Plus Jakarta Sans','Segoe UI',sans-serif;
+        }
 
-<!-- Stat cards — each with a left-border performance color -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="ff-card p-4 border-perf-good">
-            <div class="small fw-semibold text-uppercase text-muted mb-1">Sessions</div>
-            <div class="fs-2 fw-bold perf-good">@Model.Count</div>
+        [data-theme="light"] {
+            --void: #f1f5f9;
+            --glass: rgba(0,0,0,0.03);
+            --rim: rgba(0,0,0,0.08);
+            --txt: #0f172a;
+            --muted: #64748b;
+            --azure: #2563eb;
+            --azure-g: #1d4ed8;
+            --jade: #16a34a;
+            --amber: #b45309;
+            --violet: #7c3aed;
+            --r: 14px;
+            --r-lg: 20px;
+            --font: 'Plus Jakarta Sans','Segoe UI',sans-serif;
+        }
+
+        body {
+            background: var(--void);
+            color: var(--txt);
+            font-family: var(--font);
+            transition: background .3s ease, color .3s ease;
+        }
+
+            body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                z-index: 0;
+                pointer-events: none;
+                background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+                background-size: 180px;
+            }
+
+        .sessions-wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 0 12px 80px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 36px;
+            padding-top: 8px;
+        }
+
+        .page-eyebrow {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--azure);
+            margin-bottom: 6px;
+        }
+
+        .page-title {
+            font-size: clamp(26px,4vw,38px);
+            font-weight: 700;
+            letter-spacing: -.02em;
+            color: #fff;
+            line-height: 1.1;
+        }
+
+        .page-sub {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .btn-log {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg,var(--azure),#2563eb);
+            color: #fff;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 12px 24px;
+            border-radius: 99px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(61,127,255,.35);
+            transition: transform .2s,box-shadow .2s;
+            white-space: nowrap;
+            font-family: var(--font);
+        }
+
+            .btn-log:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 32px rgba(61,127,255,.45);
+                color: #fff;
+            }
+
+        .stat-strip {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 14px;
+            margin-bottom: 32px;
+        }
+
+        @@media(max-width:800px) {
+            .stat-strip {
+                grid-template-columns: repeat(2,1fr);
+            }
+        }
+
+        @@media(max-width:480px) {
+            .stat-strip {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .stat-tile {
+            background: var(--glass);
+            border: 1px solid var(--rim);
+            border-radius: var(--r-lg);
+            padding: 22px 20px;
+            position: relative;
+            overflow: hidden;
+            animation: riseUp .5s ease both;
+        }
+
+            .stat-tile::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: radial-gradient(ellipse at top left,rgba(255,255,255,0.04),transparent 65%);
+                pointer-events: none;
+            }
+
+            .stat-tile:nth-child(1) {
+                animation-delay: .00s
+            }
+
+            .stat-tile:nth-child(2) {
+                animation-delay: .07s
+            }
+
+            .stat-tile:nth-child(3) {
+                animation-delay: .14s
+            }
+
+            .stat-tile:nth-child(4) {
+                animation-delay: .21s
+            }
+
+        @@keyframes riseUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .stat-tile-accent {
+            width: 32px;
+            height: 3px;
+            border-radius: 99px;
+            margin-bottom: 14px;
+        }
+
+        .stat-tile-val {
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: -.03em;
+            line-height: 1;
+            color: #fff;
+        }
+
+        .stat-tile-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: 5px;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .search-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+            max-width: 340px;
+        }
+
+            .search-wrap i {
+                position: absolute;
+                left: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--muted);
+                font-size: 14px;
+                pointer-events: none;
+            }
+
+        .search-input {
+            width: 100%;
+            background: var(--glass);
+            border: 1px solid var(--rim);
+            border-radius: 99px;
+            color: var(--txt);
+            font-size: 13px;
+            padding: 10px 16px 10px 40px;
+            outline: none;
+            transition: border-color .2s;
+            font-family: var(--font);
+        }
+
+            .search-input:focus {
+                border-color: rgba(61,127,255,.5);
+            }
+
+            .search-input::placeholder {
+                color: var(--muted);
+            }
+
+        .filter-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .fpill {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 7px 16px;
+            border-radius: 99px;
+            cursor: pointer;
+            border: 1px solid var(--rim);
+            background: var(--glass);
+            color: var(--muted);
+            transition: all .2s;
+            white-space: nowrap;
+            font-family: var(--font);
+        }
+
+            .fpill.active, .fpill:hover {
+                background: rgba(61,127,255,.15);
+                border-color: rgba(61,127,255,.4);
+                color: var(--azure-g);
+            }
+
+        .view-toggle {
+            display: flex;
+            gap: 4px;
+        }
+
+        .vtbtn {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: var(--glass);
+            border: 1px solid var(--rim);
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+            .vtbtn.active, .vtbtn:hover {
+                background: rgba(61,127,255,.15);
+                color: var(--azure-g);
+                border-color: rgba(61,127,255,.3);
+            }
+
+        .sessions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill,minmax(320px,1fr));
+            gap: 16px;
+        }
+
+        .sessions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sess-card {
+            background: var(--glass);
+            border: 1px solid var(--rim);
+            border-radius: var(--r-lg);
+            padding: 22px 22px 18px;
+            position: relative;
+            overflow: hidden;
+            animation: cardIn .45s ease both;
+            transition: transform .25s,border-color .25s,box-shadow .25s;
+            cursor: default;
+        }
+
+            .sess-card:hover {
+                transform: translateY(-3px);
+                border-color: rgba(61,127,255,.25);
+                box-shadow: 0 16px 40px rgba(0,0,0,.35);
+            }
+
+        @@keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(16px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .sess-card:nth-child(1) {
+            animation-delay: .05s
+        }
+
+        .sess-card:nth-child(2) {
+            animation-delay: .10s
+        }
+
+        .sess-card:nth-child(3) {
+            animation-delay: .15s
+        }
+
+        .sess-card:nth-child(4) {
+            animation-delay: .20s
+        }
+
+        .sess-card:nth-child(5) {
+            animation-delay: .25s
+        }
+
+        .sess-card:nth-child(6) {
+            animation-delay: .30s
+        }
+
+        .sess-card:nth-child(7) {
+            animation-delay: .35s
+        }
+
+        .sess-card:nth-child(8) {
+            animation-delay: .40s
+        }
+
+        .sess-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 16px;
+            bottom: 16px;
+            width: 3px;
+            border-radius: 0 3px 3px 0;
+        }
+
+        .sess-card.deep::before {
+            background: var(--jade);
+        }
+
+        .sess-card.focus::before {
+            background: var(--azure);
+        }
+
+        .sess-card.quick::before {
+            background: var(--amber);
+        }
+
+        .sess-card::after {
+            content: '';
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: .07;
+        }
+
+        .sess-card.deep::after {
+            background: var(--jade);
+        }
+
+        .sess-card.focus::after {
+            background: var(--azure);
+        }
+
+        .sess-card.quick::after {
+            background: var(--amber);
+        }
+
+        .sess-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .sess-subject {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .sess-date {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 3px;
+            font-weight: 500;
+        }
+
+        .sess-badge {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            padding: 4px 11px;
+            border-radius: 99px;
+            flex-shrink: 0;
+        }
+
+        .badge-deep {
+            background: rgba(16,185,129,.15);
+            color: #34d399;
+            border: 1px solid rgba(16,185,129,.25);
+        }
+
+        .badge-focus {
+            background: rgba(61,127,255,.15);
+            color: var(--azure-g);
+            border: 1px solid rgba(61,127,255,.25);
+        }
+
+        .badge-quick {
+            background: rgba(245,158,11,.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245,158,11,.25);
+        }
+
+        .sess-hours {
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: -.03em;
+            line-height: 1;
+        }
+
+        .sess-hours-unit {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--muted);
+            margin-left: 3px;
+        }
+
+        .deep .sess-hours {
+            color: #34d399;
+        }
+
+        .focus .sess-hours {
+            color: var(--azure-g);
+        }
+
+        .quick .sess-hours {
+            color: #fbbf24;
+        }
+
+        .sess-bar-track {
+            height: 4px;
+            border-radius: 99px;
+            background: rgba(255,255,255,.06);
+            margin: 14px 0 8px;
+            overflow: hidden;
+        }
+
+        .sess-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 1s cubic-bezier(.4,0,.2,1);
+        }
+
+        .deep .sess-bar-fill {
+            background: linear-gradient(90deg,#059669,#34d399);
+        }
+
+        .focus .sess-bar-fill {
+            background: linear-gradient(90deg,#2563eb,var(--azure-g));
+        }
+
+        .quick .sess-bar-fill {
+            background: linear-gradient(90deg,#d97706,#fbbf24);
+        }
+
+        .sess-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .sess-row {
+            background: var(--glass);
+            border: 1px solid var(--rim);
+            border-radius: var(--r);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            animation: cardIn .4s ease both;
+            transition: transform .2s,border-color .2s;
+        }
+
+            .sess-row:hover {
+                transform: translateX(4px);
+                border-color: rgba(61,127,255,.2);
+            }
+
+        .sess-row-accent {
+            width: 4px;
+            height: 36px;
+            border-radius: 99px;
+            flex-shrink: 0;
+        }
+
+        .deep-a {
+            background: var(--jade);
+        }
+
+        .focus-a {
+            background: var(--azure);
+        }
+
+        .quick-a {
+            background: var(--amber);
+        }
+
+        .sess-row-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sess-row-subject {
+            font-weight: 600;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .sess-row-date {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .sess-row-hours {
+            font-weight: 800;
+            font-size: 22px;
+            letter-spacing: -.02em;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            background: var(--glass);
+            border: 1px solid var(--rim);
+            border-radius: var(--r-lg);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: .4;
+        }
+
+        .empty-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .empty-sub {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        .tally-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: var(--glass);
+            border: 1px solid var(--rim);
+            border-radius: var(--r-lg);
+            padding: 18px 24px;
+            margin-top: 20px;
+        }
+
+        .tally-item {
+            text-align: center;
+        }
+
+        .tally-val {
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .tally-lbl {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        @@media(max-width:600px) {
+            .sessions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-wrap {
+                max-width: 100%;
+            }
+        }
+        /* ── Light mode overrides ─────────────────────────── */
+        [data-theme="light"] body::before {
+            display: none;
+        }
+
+        [data-theme="light"] .page-title {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .stat-tile {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+            [data-theme="light"] .stat-tile::after {
+                background: radial-gradient(ellipse at top left,rgba(0,0,0,0.02),transparent 65%);
+            }
+
+        [data-theme="light"] .stat-tile-val {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .sess-card {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+            [data-theme="light"] .sess-card:hover {
+                box-shadow: 0 12px 32px rgba(0,0,0,0.10);
+                border-color: rgba(37,99,235,0.2);
+            }
+
+        [data-theme="light"] .sess-subject {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .sess-bar-track {
+            background: rgba(0,0,0,0.06);
+        }
+
+        [data-theme="light"] .sess-row {
+            background: #ffffff;
+            border-color: #e2e8f0;
+        }
+
+            [data-theme="light"] .sess-row:hover {
+                border-color: rgba(37,99,235,0.2);
+                box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            }
+
+        [data-theme="light"] .sess-row-subject {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .tally-bar {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        [data-theme="light"] .tally-val {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .empty-state {
+            background: #ffffff;
+            border-color: #e2e8f0;
+        }
+
+        [data-theme="light"] .empty-title {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .search-input {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .fpill {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            color: #64748b;
+        }
+
+        [data-theme="light"] .vtbtn {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            color: #64748b;
+        }
+    </style>
+}
+
+<div class="sessions-wrap">
+    <div class="page-header">
+        <div>
+            <div class="page-eyebrow">FocusFlow</div>
+            <div class="page-title">Session History</div>
+            <div class="page-sub">Every hour you've invested in yourself</div>
         </div>
+        <a asp-action="Log" class="btn-log"><i class="bi bi-plus-lg"></i> Log New Session</a>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="ff-card p-4 border-perf-avg">
-            <div class="small fw-semibold text-uppercase text-muted mb-1">Total Hours</div>
-            <div class="fs-2 fw-bold perf-avg">@total h</div>
+
+    <div class="stat-strip">
+        <div class="stat-tile">
+            <div class="stat-tile-accent" style="background:var(--azure);"></div>
+            <div class="stat-tile-val count-up" data-target="@Model.Count">0</div>
+            <div class="stat-tile-label">Total Sessions</div>
         </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="ff-card p-4"
-             style="border-left:4px solid #3b82f6;">
-            <div class="small fw-semibold text-uppercase text-muted mb-1">Avg/Session</div>
-            <div class="fs-2 fw-bold" style="color:#2563eb;">@avg h</div>
+        <div class="stat-tile">
+            <div class="stat-tile-accent" style="background:var(--jade);"></div>
+            <div class="stat-tile-val count-up" data-target="@total" data-dec="1">0</div>
+            <div class="stat-tile-label">Hours Logged</div>
         </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="ff-card p-4" style="border-left:4px solid #7c3aed;">
-            <div class="small fw-semibold text-uppercase text-muted mb-1">Last Session</div>
-            <div class="fs-4 fw-bold" style="color:#7c3aed;">
+        <div class="stat-tile">
+            <div class="stat-tile-accent" style="background:var(--violet);"></div>
+            <div class="stat-tile-val count-up" data-target="@avg" data-dec="1">0</div>
+            <div class="stat-tile-label">Avg / Session</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-tile-accent" style="background:var(--amber);"></div>
+            <div class="stat-tile-val" style="font-size:20px;padding-top:8px;">
                 @(lastDate.HasValue? lastDate.Value.ToString("dd MMM") : "—")
             </div>
+            <div class="stat-tile-label">Last Session</div>
         </div>
     </div>
-</div>
 
-@if (!Model.Any())
-{
-    <div class="ff-card p-5 text-center text-muted">
-        <i class="bi bi-clock-history fs-1 d-block mb-3"></i>
-        <p class="fs-5 mb-3">No sessions logged yet.</p>
-        <a asp-action="Log" class="btn btn-primary rounded-pill px-4">
-            Log your first session
-        </a>
-    </div>
-}
-else
-{
-    <!-- Filter pills -->
-    <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
-        <span class="small fw-semibold text-muted">Filter:</span>
-        <button class="btn btn-sm btn-primary rounded-pill filter-btn"
-                data-subject="all">
-            All
-        </button>
-        @foreach (var sub in Model.Select(s => s.SubjectName).Distinct())
-        {
-            <button class="btn btn-sm btn-outline-secondary rounded-pill filter-btn"
-                    data-subject="@sub">
-                @sub
-            </button>
-        }
-    </div>
-
-    <div class="ff-card overflow-hidden">
-        <table class="table table-hover align-middle mb-0" id="sessionsTable">
-            <thead style="background:#f8fafc;">
-                <tr>
-                    <th class="ps-4 py-3 text-uppercase small fw-semibold text-muted">Date</th>
-                    <th class="py-3 text-uppercase small fw-semibold text-muted">Subject</th>
-                    <th class="py-3 text-uppercase small fw-semibold text-muted">Hours</th>
-                    <th class="py-3 text-uppercase small fw-semibold text-muted">Performance</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var s in Model)
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">⏳</div>
+            <div class="empty-title">No sessions yet</div>
+            <div class="empty-sub">Start logging to see your progress here.</div>
+            <a asp-action="Log" class="btn-log" style="display:inline-flex;"><i class="bi bi-plus-lg"></i> Log First Session</a>
+        </div>
+    }
+    else
+    {
+        <div class="toolbar">
+            <div class="search-wrap">
+                <i class="bi bi-search"></i>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search subject…" autocomplete="off">
+            </div>
+            <div class="filter-pills" id="filterPills">
+                <button class="fpill active" data-subject="all">All (@Model.Count)</button>
+                @foreach (var sub in Model.Select(s => s.SubjectName).Distinct())
                 {
-                    // Color-code by hours studied in that session
-                    var perfClass = s.Hours >= 4 ? "perf-good"
-                    : s.Hours >= 2 ? "perf-avg"
-                    : "perf-weak";
-                    var barClass = s.Hours >= 4 ? "bar-good"
-                    : s.Hours >= 2 ? "bar-avg"
-                    : "bar-weak";
-                    var badgeCss = s.Hours >= 4 ? "bg-perf-good"
-                    : s.Hours >= 2 ? "bg-perf-avg"
-                    : "bg-perf-weak";
-                    var label = s.Hours >= 4 ? "Deep Focus"
-                    : s.Hours >= 2 ? "Focused"
-                    : "Quick";
-
-                    <tr data-subject="@s.SubjectName">
-                        <td class="ps-4">
-                            <div class="fw-semibold">@s.Date.ToString("dd MMM yyyy")</div>
-                            <div class="text-muted small">@s.Date.DayOfWeek</div>
-                        </td>
-                        <td>
-                            <span class="badge bg-primary bg-opacity-10
-                                                 text-primary rounded-pill px-3 py-2 fw-semibold">
-                                @s.SubjectName
-                            </span>
-                        </td>
-                        <td>
-                            <span class="fw-bold fs-5 @perfClass">@s.Hours</span>
-                            <span class="text-muted small"> hrs</span>
-                        </td>
-                        <td>
-                            <span class="badge rounded-pill @badgeCss fw-semibold"
-                                  style="font-size:11px;">
-                                @label
-                            </span>
-                        </td>
-                    </tr>
+                    var cnt = Model.Count(s => s.SubjectName == sub);
+                    <button class="fpill" data-subject="@sub">@sub (@cnt)</button>
                 }
-            </tbody>
-            <tfoot style="background:#f8fafc;">
-                <tr>
-                    <td class="ps-4 py-3 fw-semibold" colspan="2">
-                        Total — @Model.Count sessions
-                    </td>
-                    <td class="py-3 fw-bold fs-5 perf-good">
-                        @total <span class="text-muted fw-normal small">hrs</span>
-                    </td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-}
+            </div>
+            <div class="view-toggle">
+                <button class="vtbtn active" id="btnGrid" title="Grid view"><i class="bi bi-grid-3x3-gap-fill"></i></button>
+                <button class="vtbtn" id="btnList" title="List view"><i class="bi bi-list-ul"></i></button>
+            </div>
+        </div>
+
+        <div class="sessions-grid" id="gridView">
+            @foreach (var s in Model)
+            {
+                var cls = s.Hours >= 4 ? "deep" : s.Hours >= 2 ? "focus" : "quick";
+                var badge = s.Hours >= 4 ? "badge-deep" : s.Hours >= 2 ? "badge-focus" : "badge-quick";
+                var lbl = s.Hours >= 4 ? "Deep Focus" : s.Hours >= 2 ? "Focused" : "Quick";
+                var pct = Math.Min(s.Hours / 8.0 * 100, 100);
+
+                <div class="sess-card @cls" data-subject="@s.SubjectName">
+                    <div class="sess-card-top">
+                        <div>
+                            <div class="sess-subject">@s.SubjectName</div>
+                            <div class="sess-date"><i class="bi bi-calendar3 me-1"></i>@s.Date.ToString("dd MMM yyyy") · @s.Date.DayOfWeek</div>
+                        </div>
+                        <span class="sess-badge @badge">@lbl</span>
+                    </div>
+                    <div>
+                        <span class="sess-hours">@s.Hours</span>
+                        <span class="sess-hours-unit">hrs</span>
+                    </div>
+                    <div class="sess-bar-track">
+                        <div class="sess-bar-fill" style="width:0%"
+                             data-width="@pct.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+                    </div>
+                    <div class="sess-footer">
+                        <span>@(pct.ToString("0"))% of deep session</span>
+                        <span><i class="bi bi-clock me-1"></i>@(s.Hours * 60) min</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="sessions-list" id="listView" style="display:none;">
+            @foreach (var s in Model)
+            {
+                var acls = s.Hours >= 4 ? "deep-a" : s.Hours >= 2 ? "focus-a" : "quick-a";
+                var hcol = s.Hours >= 4 ? "#34d399" : s.Hours >= 2 ? "#5b9bff" : "#fbbf24";
+                var badge = s.Hours >= 4 ? "badge-deep" : s.Hours >= 2 ? "badge-focus" : "badge-quick";
+                var lbl = s.Hours >= 4 ? "Deep Focus" : s.Hours >= 2 ? "Focused" : "Quick";
+
+                <div class="sess-row" data-subject="@s.SubjectName">
+                    <div class="sess-row-accent @acls"></div>
+                    <div class="sess-row-body">
+                        <div class="sess-row-subject">@s.SubjectName</div>
+                        <div class="sess-row-date">@s.Date.ToString("dd MMM yyyy") · @s.Date.DayOfWeek</div>
+                    </div>
+                    <span class="sess-badge @badge">@lbl</span>
+                    <div class="sess-row-hours" style="color:@hcol;">@s.Hours <span style="font-size:13px;color:var(--muted);font-weight:400;">h</span></div>
+                </div>
+            }
+        </div>
+
+        <div class="tally-bar">
+            <div class="tally-item"><div class="tally-val">@Model.Count</div><div class="tally-lbl">Sessions</div></div>
+            <div class="tally-item"><div class="tally-val" style="color:#34d399;">@deepCount</div><div class="tally-lbl">Deep Focus</div></div>
+            <div class="tally-item"><div class="tally-val" style="color:var(--azure-g);">@focusCount</div><div class="tally-lbl">Focused</div></div>
+            <div class="tally-item"><div class="tally-val" style="color:#fbbf24;">@quickCount</div><div class="tally-lbl">Quick</div></div>
+            <div class="tally-item"><div class="tally-val" style="color:#34d399;">@total</div><div class="tally-lbl">Total Hours</div></div>
+            <div class="tally-item"><div class="tally-val" style="color:var(--violet);">@avg</div><div class="tally-lbl">Avg/Session</div></div>
+        </div>
+    }
+</div>
 
 @section Scripts {
     <script>
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const sub = btn.dataset.subject;
-                document.querySelectorAll('.filter-btn').forEach(b =>
-                    b.classList.replace('btn-primary','btn-outline-secondary'));
-                btn.classList.replace('btn-outline-secondary','btn-primary');
-                document.querySelectorAll('#sessionsTable tbody tr').forEach(row =>
-                    row.style.display = sub==='all' || row.dataset.subject===sub ? '' : 'none');
+        document.querySelectorAll('.count-up').forEach(el => {
+            const target=parseFloat(el.dataset.target)||0, dec=parseInt(el.dataset.dec)||0;
+            const dur=900, step=16, inc=target/(dur/step);
+            let cur=0;
+            const t=setInterval(()=>{ cur=Math.min(cur+inc,target); el.textContent=cur.toFixed(dec); if(cur>=target) clearInterval(t); },step);
+        });
+
+        setTimeout(()=>{ document.querySelectorAll('.sess-bar-fill').forEach(el=>{ el.style.width=el.dataset.width; }); },200);
+
+        const gridView=document.getElementById('gridView');
+        const listView=document.getElementById('listView');
+        document.getElementById('btnGrid').addEventListener('click',function(){
+            gridView.style.display='grid'; listView.style.display='none';
+            this.classList.add('active'); document.getElementById('btnList').classList.remove('active');
+        });
+        document.getElementById('btnList').addEventListener('click',function(){
+            gridView.style.display='none'; listView.style.display='flex';
+            this.classList.add('active'); document.getElementById('btnGrid').classList.remove('active');
+        });
+
+        let activeSubject='all';
+        document.querySelectorAll('.fpill').forEach(btn=>{
+            btn.addEventListener('click',()=>{
+                activeSubject=btn.dataset.subject;
+                document.querySelectorAll('.fpill').forEach(b=>b.classList.remove('active'));
+                btn.classList.add('active'); filterSessions();
             });
         });
+        document.getElementById('searchInput')?.addEventListener('input', filterSessions);
+        function filterSessions(){
+            const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+            const sub=activeSubject;
+            [gridView,listView].forEach(view=>{
+                if(!view) return;
+                view.querySelectorAll('[data-subject]').forEach(card=>{
+                    const s=card.dataset.subject||'';
+                    card.style.display=(sub==='all'||s===sub)&&s.toLowerCase().includes(q)?'':'none';
+                });
+            });
+        }
     </script>
 }

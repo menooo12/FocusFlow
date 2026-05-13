@@ -1,17 +1,18 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using FocusFlow.Models;
 using FocusFlow.Models.ViewModels;
 
 namespace FocusFlow.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
 
         public AccountController(
-            UserManager<IdentityUser> userManager,
-            SignInManager<IdentityUser> signInManager)
+            UserManager<ApplicationUser> userManager,
+            SignInManager<ApplicationUser> signInManager)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -26,18 +27,18 @@ namespace FocusFlow.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = new IdentityUser
+                var user = new ApplicationUser
                 {
-                    UserName = model.Email, 
-                    Email = model.Email
+                    UserName = model.Email,
+                    Email = model.Email,
+                    WeeklyTargetHours = 20   // default
                 };
 
                 var result = await _userManager.CreateAsync(user, model.Password);
-
                 if (result.Succeeded)
                 {
                     await _signInManager.SignInAsync(user, isPersistent: false);
-                    return RedirectToAction("Index", "Dashboard");
+                    return RedirectToAction("Index", "Home");
                 }
 
                 foreach (var error in result.Errors)
@@ -56,19 +57,17 @@ namespace FocusFlow.Controllers
             if (ModelState.IsValid)
             {
                 var user = await _userManager.FindByEmailAsync(model.Email);
-
                 if (user != null)
                 {
                     var result = await _signInManager.PasswordSignInAsync(
-                        user.UserName,
+                        user.UserName!,
                         model.Password,
                         model.RememberMe,
                         lockoutOnFailure: false);
 
                     if (result.Succeeded)
-                        return RedirectToAction("Index", "Dashboard");
+                        return RedirectToAction("Index", "Home");
                 }
-
                 ModelState.AddModelError(string.Empty, "Invalid email or password.");
             }
             return View(model);

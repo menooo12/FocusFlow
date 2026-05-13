@@ -1,88 +1,703 @@
 ﻿@model List<FocusFlow.Models.SubjectProgressViewModel>
 
 @{
-    ViewData["Title"] = "Subjects Management";
+    ViewData["Title"] = "My Subjects";
+
+    string[] icons = { "bi-journal-bookmark-fill","bi-calculator-fill","bi-globe2",
+                         "bi-cpu-fill","bi-brush-fill","bi-book-fill",
+                         "bi-graph-up-arrow","bi-code-slash","bi-flask-fill","bi-music-note-beamed" };
+    string[] accents = { "#3d7fff","#10b981","#8b5cf6","#f43f5e","#f59e0b",
+                         "#22d3ee","#ec4899","#6366f1","#14b8a6","#a78bfa" };
+
+    double grandTotal = Model.Sum(m => m.LoggedHours);
+    double grandTarget = Model.Sum(m => m.Subject.TargetHours);
+    double overallPct = grandTarget > 0 ? Math.Min(Math.Round(grandTotal / grandTarget * 100, 1), 100) : 0;
+    int doneCount = Model.Count(m => m.ProgressPct >= 100);
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="fw-bold mb-1">My Subjects</h2>
-        <p class="text-muted small mb-0">Track your logged study time and progress targets.</p>
+@section Styles {
+    <style>
+        [data-theme="dark"] {
+            --void: #080c17;
+            --glass: rgba(255,255,255,0.04);
+            --rim: rgba(255,255,255,0.08);
+            --txt: #e8eaf0;
+            --muted: #5a6480;
+            --azure: #3d7fff;
+            --jade: #10b981;
+            --r: 14px;
+            --r-lg: 20px;
+            --font: 'Plus Jakarta Sans','Segoe UI',sans-serif;
+        }
+
+        [data-theme="light"] {
+            --void: #f1f5f9;
+            --glass: rgba(0,0,0,0.03);
+            --rim: rgba(0,0,0,0.08);
+            --txt: #0f172a;
+            --muted: #64748b;
+            --azure: #2563eb;
+            --jade: #16a34a;
+            --r: 14px;
+            --r-lg: 20px;
+            --font: 'Plus Jakarta Sans','Segoe UI',sans-serif;
+        }
+
+        body {
+            background: var(--void);
+            color: var(--txt);
+            font-family: var(--font);
+            transition: background .3s ease, color .3s ease;
+        }
+
+            body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                z-index: 0;
+                pointer-events: none;
+                background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+                background-size: 180px;
+            }
+
+        .subj-wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 0 12px 80px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 32px;
+            padding-top: 8px;
+        }
+
+        .page-eyebrow {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--azure);
+            margin-bottom: 6px;
+        }
+
+        .page-title {
+            font-size: clamp(26px,4vw,38px);
+            font-weight: 700;
+            letter-spacing: -.02em;
+            color: #fff;
+            line-height: 1.1;
+        }
+
+        .page-sub {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .btn-add {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg,var(--azure),#2563eb);
+            color: #fff;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 12px 24px;
+            border-radius: 99px;
+            text-decoration: none;
+            box-shadow: 0 8px 24px rgba(61,127,255,.35);
+            transition: transform .2s,box-shadow .2s;
+            white-space: nowrap;
+        }
+
+            .btn-add:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 32px rgba(61,127,255,.45);
+                color: #fff;
+            }
+
+        .overview-banner {
+            background: var(--glass);
+            border: 1px solid var(--rim);
+            border-radius: var(--r-lg);
+            padding: 28px 32px;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+            animation: riseUp .5s ease both;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .overview-banner::before {
+                content: '';
+                position: absolute;
+                top: -60px;
+                right: -60px;
+                width: 220px;
+                height: 220px;
+                border-radius: 50%;
+                background: radial-gradient(circle,rgba(61,127,255,.1),transparent 70%);
+                pointer-events: none;
+            }
+
+        .ov-ring-wrap {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            flex-shrink: 0;
+        }
+
+        .ov-pct {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            font-size: 16px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .ov-stats {
+            display: flex;
+            gap: 36px;
+            flex-wrap: wrap;
+        }
+
+        .ov-stat-val {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -.02em;
+            color: #fff;
+        }
+
+        .ov-stat-lbl {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        @@keyframes riseUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .search-wrap {
+            position: relative;
+            max-width: 320px;
+            margin-bottom: 24px;
+        }
+
+            .search-wrap i {
+                position: absolute;
+                left: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--muted);
+                font-size: 14px;
+            }
+
+        .search-input {
+            width: 100%;
+            background: var(--glass);
+            border: 1px solid var(--rim);
+            border-radius: 99px;
+            color: var(--txt);
+            font-size: 13px;
+            padding: 10px 16px 10px 40px;
+            outline: none;
+            transition: border-color .2s;
+            font-family: var(--font);
+        }
+
+            .search-input:focus {
+                border-color: rgba(61,127,255,.5);
+            }
+
+            .search-input::placeholder {
+                color: var(--muted);
+            }
+
+        .subj-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill,minmax(290px,1fr));
+            gap: 18px;
+        }
+
+        @@media(max-width:600px) {
+            .subj-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .subj-card {
+            background: var(--glass);
+            border: 1px solid var(--rim);
+            border-radius: var(--r-lg);
+            padding: 26px 24px 20px;
+            position: relative;
+            overflow: hidden;
+            animation: cardIn .45s ease both;
+            transition: transform .25s,box-shadow .25s,border-color .25s;
+        }
+
+            .subj-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 20px 48px rgba(0,0,0,.4);
+            }
+
+        @@keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(18px) scale(.98)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1)
+            }
+        }
+
+        .subj-card:nth-child(1) {
+            animation-delay: .05s
+        }
+
+        .subj-card:nth-child(2) {
+            animation-delay: .10s
+        }
+
+        .subj-card:nth-child(3) {
+            animation-delay: .15s
+        }
+
+        .subj-card:nth-child(4) {
+            animation-delay: .20s
+        }
+
+        .subj-card:nth-child(5) {
+            animation-delay: .25s
+        }
+
+        .subj-card:nth-child(6) {
+            animation-delay: .30s
+        }
+
+        .subj-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            border-radius: var(--r-lg) var(--r-lg) 0 0;
+        }
+
+        .subj-card::after {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            opacity: .08;
+            pointer-events: none;
+        }
+
+        .subj-card-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .subj-icon-wrap {
+            width: 46px;
+            height: 46px;
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .subj-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.2;
+            flex: 1;
+        }
+
+        .subj-done-badge {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            padding: 3px 10px;
+            border-radius: 99px;
+            background: rgba(16,185,129,.15);
+            color: #34d399;
+            border: 1px solid rgba(16,185,129,.25);
+            flex-shrink: 0;
+        }
+
+        .subj-hours-row {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            margin-bottom: 14px;
+        }
+
+        .subj-logged {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -.02em;
+        }
+
+        .subj-unit {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .subj-target {
+            font-size: 13px;
+            color: var(--muted);
+            margin-left: 6px;
+        }
+
+        .subj-bar-track {
+            height: 6px;
+            border-radius: 99px;
+            background: rgba(255,255,255,.06);
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .subj-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 1.1s cubic-bezier(.4,0,.2,1);
+        }
+
+        .subj-meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 18px;
+        }
+
+        .subj-pct-pill {
+            font-weight: 700;
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 99px;
+        }
+
+        .subj-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .sa-btn {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 9px 12px;
+            border-radius: 10px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: background .2s,transform .15s;
+            font-family: var(--font);
+        }
+
+            .sa-btn:hover {
+                transform: translateY(-1px);
+            }
+
+        .sa-edit {
+            background: rgba(255,255,255,.06);
+            color: var(--txt);
+            border: 1px solid var(--rim);
+        }
+
+            .sa-edit:hover {
+                background: rgba(255,255,255,.1);
+                color: #fff;
+            }
+
+        .sa-del {
+            background: rgba(244,63,94,.08);
+            color: #fb7185;
+            border: 1px solid rgba(244,63,94,.18);
+        }
+
+            .sa-del:hover {
+                background: rgba(244,63,94,.18);
+                color: #fda4af;
+            }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            background: var(--glass);
+            border: 1px solid var(--rim);
+            border-radius: var(--r-lg);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: .4;
+        }
+
+        .empty-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .empty-sub {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+        /* ── Light mode overrides ─────────────────────────── */
+        [data-theme="light"] body::before {
+            display: none;
+        }
+
+        [data-theme="light"] .page-title {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .overview-banner {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        [data-theme="light"] .ov-stat-val {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .ov-pct {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] circle[stroke="rgba(255,255,255,.07)"] {
+            stroke: rgba(0,0,0,0.08);
+        }
+
+        [data-theme="light"] .subj-card {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+            [data-theme="light"] .subj-card:hover {
+                box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+                border-color: rgba(37,99,235,0.2);
+            }
+
+        [data-theme="light"] .subj-name {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .subj-bar-track {
+            background: rgba(0,0,0,0.06);
+        }
+
+        [data-theme="light"] .empty-state {
+            background: #ffffff;
+            border-color: #e2e8f0;
+        }
+
+        [data-theme="light"] .empty-title {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .sa-edit {
+            background: rgba(0,0,0,0.04);
+            border-color: #e2e8f0;
+            color: #0f172a;
+        }
+
+            [data-theme="light"] .sa-edit:hover {
+                background: rgba(0,0,0,0.08);
+                color: #0f172a;
+            }
+
+        [data-theme="light"] .search-input {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .subj-done-badge {
+            background: rgba(22,163,74,0.12);
+            color: #15803d;
+            border-color: rgba(22,163,74,0.25);
+        }
+    </style>
+}
+
+<div class="subj-wrap">
+    <div class="page-header">
+        <div>
+            <div class="page-eyebrow">FocusFlow</div>
+            <div class="page-title">My Subjects</div>
+            <div class="page-sub">Track targets, progress, and logged hours per subject</div>
+        </div>
+        <a asp-action="Create" class="btn-add"><i class="bi bi-plus-lg"></i> Add Subject</a>
     </div>
-    <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm">
-        <i class="bi bi-plus-lg me-1"></i> Add New Subject
-    </a>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">📚</div>
+            <div class="empty-title">No subjects yet</div>
+            <div class="empty-sub">Add your first subject to start tracking progress.</div>
+            <a asp-action="Create" class="btn-add" style="display:inline-flex;"><i class="bi bi-plus-lg"></i> Add First Subject</a>
+        </div>
+    }
+    else
+    {
+        <div class="overview-banner">
+            <div class="ov-ring-wrap">
+                <svg width="90" height="90" viewBox="0 0 90 90">
+                    <circle cx="45" cy="45" r="38" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="8" />
+                    <circle id="ovRing" cx="45" cy="45" r="38" fill="none" stroke="var(--azure)" stroke-width="8"
+                            stroke-linecap="round" stroke-dasharray="0 239" transform="rotate(-90 45 45)"
+                            style="transition:stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)" />
+                </svg>
+                <div class="ov-pct" id="ovPct">0%</div>
+            </div>
+            <div class="ov-stats">
+                <div><div class="ov-stat-val">@Model.Count</div><div class="ov-stat-lbl">Subjects</div></div>
+                <div><div class="ov-stat-val" style="color:#34d399;" id="ovTotal">0</div><div class="ov-stat-lbl">Hours Logged</div></div>
+                <div><div class="ov-stat-val" style="color:#fbbf24;">@grandTarget</div><div class="ov-stat-lbl">Target Hours</div></div>
+                <div><div class="ov-stat-val" style="color:#a78bfa;">@doneCount</div><div class="ov-stat-lbl">Completed</div></div>
+            </div>
+        </div>
+
+        <div class="search-wrap">
+            <i class="bi bi-search"></i>
+            <input type="text" class="search-input" id="searchInput" placeholder="Search subjects…" autocomplete="off">
+        </div>
+
+        <div class="subj-grid" id="subjGrid">
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                var vm = Model[i];
+                var accent = accents[i % accents.Length];
+                var icon = icons[i % icons.Length];
+                var pct = vm.ProgressPct;
+                string pctColor = pct >= 100 ? "#34d399" : pct >= 60 ? "#3d7fff" : pct >= 30 ? "#f59e0b" : "#f43f5e";
+                string barGrad = pct >= 100 ? "linear-gradient(90deg,#059669,#34d399)" : pct >= 60 ? "linear-gradient(90deg,#2563eb,#5b9bff)" : pct >= 30 ? "linear-gradient(90deg,#d97706,#fbbf24)" : "linear-gradient(90deg,#be123c,#f43f5e)";
+                string statusTxt = pct >= 100 ? "✅ Done" : pct >= 60 ? "🔵 On Track" : pct >= 30 ? "🟡 Moderate" : "🔴 Behind";
+                string pillBg = pct >= 100 ? "rgba(16,185,129,.15)" : pct >= 60 ? "rgba(61,127,255,.15)" : pct >= 30 ? "rgba(245,158,11,.15)" : "rgba(244,63,94,.15)";
+
+                <div class="subj-card" data-name="@vm.Subject.Name.ToLower()">
+                    <style>
+                        .subj-card:nth-child( @(i + 1) )::before {
+                            background: @accent;
+                        }
+
+                        .subj-card:nth-child( @(i + 1) )::after {
+                            background: @accent;
+                        }
+                    </style>
+                    <div class="subj-card-head">
+                        <div class="subj-icon-wrap" style="background:@(accent)22;color:@accent;"><i class="bi @icon"></i></div>
+                        <div class="subj-name">@vm.Subject.Name</div>
+                        @if (pct >= 100)
+                        {
+                            <span class="subj-done-badge">Done</span>
+                        }
+                    </div>
+                    <div class="subj-hours-row">
+                        <span class="subj-logged" style="color:@accent;">@vm.LoggedHours</span>
+                        <span class="subj-unit">h</span>
+                        <span class="subj-target">/ @vm.Subject.TargetHours h target</span>
+                    </div>
+                    <div class="subj-bar-track">
+                        <div class="subj-bar-fill" style="width:0%;background:@barGrad;"
+                             data-width="@pct.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)%"></div>
+                    </div>
+                    <div class="subj-meta-row">
+                        <span>@statusTxt</span>
+                        <span class="subj-pct-pill" style="background:@pillBg;color:@pctColor;">@pct%</span>
+                    </div>
+                    <div class="subj-actions">
+                       
+                        <a asp-action="Edit"
+                           asp-route-id="@vm.Subject.Id"
+                           class="sa-btn sa-edit">
+                            <i class="bi bi-pencil-fill"></i> Edit
+                        </a>
+                        <form asp-action="Delete"
+                              asp-route-id="@vm.Subject.Id"
+                              method="post"
+                              style="flex:1;display:flex;"
+                              onsubmit="return confirm('Delete @vm.Subject.Name and all its history? This cannot be undone.');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="sa-btn sa-del" style="width:100%;">
+                                <i class="bi bi-trash3-fill"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 </div>
 
-@if (!Model.Any())
-{
-    <div class="card text-center p-5 text-muted border-0 shadow-sm rounded-4">
-        <i class="bi bi-journal-x fs-1 mb-3"></i>
-        <p class="mb-3">No subjects found in your list.</p>
-        <div class="d-flex justify-content-center">
-            <a asp-action="Create" class="btn btn-outline-primary rounded-pill px-4">Start by adding one</a>
-        </div>
-    </div>
-}
-else
-{
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th class="ps-4 py-3">Subject Name</th>
-                    <th class="py-3">Target (h)</th>
-                    <th class="py-3">Logged (h)</th>
-                    <th class="py-3">Progress Status</th>
-                    <th class="pe-4 py-3 text-end">Manage</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var vm in Model)
-                {
-                    // منطق الألوان بناءً على النسبة
-                    var progressColor = vm.ProgressPct >= 80 ? "bg-success" : vm.ProgressPct >= 50 ? "bg-warning" : "bg-danger";
-                    var textColor = vm.ProgressPct >= 80 ? "text-success" : vm.ProgressPct >= 50 ? "text-warning" : "text-danger";
-
-                    <tr>
-                        <td class="ps-4 fw-bold text-dark">@vm.Subject.Name</td>
-                        <td>
-                            <span class="badge bg-secondary bg-opacity-10 text-secondary">
-                                @vm.Subject.TargetHours h
-                            </span>
-                        </td>
-                        <td>
-                            <span class="fw-bold @textColor">@vm.LoggedHours h</span>
-                        </td>
-                        <td style="min-width: 180px;">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="progress flex-grow-1" style="height:7px; border-radius:10px; background-color: #eee;">
-                                    <div class="progress-bar @progressColor"
-                                         role="progressbar"
-                                         style="width: @vm.ProgressPct%; border-radius:10px;"
-                                         aria-valuenow="@vm.ProgressPct"
-                                         aria-valuemin="0"
-                                         aria-valuemax="100"></div>
-                                </div>
-                                <span class="small fw-semibold @textColor">@vm.ProgressPct%</span>
-                            </div>
-                        </td>
-                        <td class="pe-4 text-end">
-                            <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                                <a asp-action="Edit" asp-route-id="@vm.Subject.Id" class="btn btn-sm btn-white border-end">
-                                    <i class="bi bi-pencil text-muted"></i>
-                                </a>
-                                @* زر الحذف المباشر *@
-                                <a asp-action="Delete" asp-route-id="@vm.Subject.Id"
-                                   class="btn btn-sm btn-white"
-                                   onclick="return confirm('Delete this subject and all its related history? This cannot be undone.');">
-                                    <i class="bi bi-trash text-danger"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+@section Scripts {
+    <script>
+        (function(){
+            const pct=@overallPct, circ=2*Math.PI*38;
+            const ring=document.getElementById('ovRing');
+            const pctEl=document.getElementById('ovPct');
+            const totEl=document.getElementById('ovTotal');
+            if(!ring) return;
+            const totalTarget=@grandTotal, dur=1000, step=16, inc=totalTarget/(dur/step);
+            let cur=0;
+            const t=setInterval(()=>{ cur=Math.min(cur+inc,totalTarget); if(totEl) totEl.textContent=cur.toFixed(1); if(cur>=totalTarget) clearInterval(t); },step);
+            setTimeout(()=>{ ring.style.strokeDasharray=(pct/100*circ)+' '+circ; if(pctEl) pctEl.textContent=pct+'%'; },200);
+        })();
+        setTimeout(()=>{ document.querySelectorAll('.subj-bar-fill').forEach(el=>{ el.style.width=el.dataset.width; }); },300);
+        document.getElementById('searchInput')?.addEventListener('input',function(){
+            const q=this.value.toLowerCase();
+            document.querySelectorAll('#subjGrid .subj-card').forEach(card=>{ card.style.display=(card.dataset.name||'').includes(q)?'':'none'; });
+        });
+    </script>
 }

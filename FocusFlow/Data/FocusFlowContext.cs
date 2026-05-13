@@ -5,7 +5,7 @@ using FocusFlow.Models;
 
 namespace FocusFlow.Data
 {
-    public class FocusFlowContext : IdentityDbContext<IdentityUser>
+    public class FocusFlowContext : IdentityDbContext<ApplicationUser>
     {
         public FocusFlowContext(DbContextOptions<FocusFlowContext> options)
             : base(options)

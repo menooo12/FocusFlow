@@ -1,19 +1,14 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] — FocusFlow</title>
 
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
           rel="stylesheet" />
-
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
           rel="stylesheet" />
-
-    <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
           rel="stylesheet" />
 
@@ -22,44 +17,97 @@
             box-sizing: border-box;
         }
 
-        :root {
+        /* ── DARK MODE (default) ─────────────────────────────────── */
+        :root,
+        [data-theme="dark"] {
             --ff-navy: #0f172a;
+            --ff-nav-bg: #0f172a;
+            --ff-page-bg: #060b18;
             --ff-surface: #1e293b;
+            --ff-card: #111827;
+            --ff-border: rgba(255,255,255,0.08);
+            --ff-text: #f1f5f9;
+            --ff-text-soft: #cbd5e1;
+            --ff-muted: #64748b;
+            --ff-good: #16a34a;
+            --ff-avg: #b45309;
+            --ff-weak: #dc2626;
+            --ff-accent: #3b82f6;
+            --ff-font: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            --ff-radius: 12px;
+            --nav-h: 64px;
+            /* dropdown */
+            --dd-bg: #1e293b;
+            --dd-border: rgba(255,255,255,0.1);
+            --dd-text: #f1f5f9;
+            --dd-sub: #94a3b8;
+            --dd-hover: rgba(255,255,255,0.07);
+            --dd-danger: #f87171;
+            /* footer */
+            --footer-border: rgba(255,255,255,0.07);
+        }
+
+        /* ── LIGHT MODE ──────────────────────────────────────────── */
+        [data-theme="light"] {
+            --ff-navy: #1e40af;
+            --ff-nav-bg: #1e3a8a;
+            --ff-page-bg: #f1f5f9;
+            --ff-surface: #ffffff;
             --ff-card: #ffffff;
             --ff-border: #e2e8f0;
             --ff-text: #0f172a;
+            --ff-text-soft: #334155;
             --ff-muted: #64748b;
-            --ff-good: #16a34a;
+            --ff-good: #15803d;
             --ff-avg: #b45309;
             --ff-weak: #dc2626;
             --ff-accent: #2563eb;
             --ff-font: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
             --ff-radius: 12px;
             --nav-h: 64px;
+            /* dropdown */
+            --dd-bg: #ffffff;
+            --dd-border: #e2e8f0;
+            --dd-text: #0f172a;
+            --dd-sub: #64748b;
+            --dd-hover: #f8fafc;
+            --dd-danger: #dc2626;
+            /* footer */
+            --footer-border: #e2e8f0;
         }
 
+        /* ── BASE ────────────────────────────────────────────────── */
         html, body {
             font-family: var(--ff-font);
-            background: #f1f5f9;
+            background: var(--ff-page-bg);
             color: var(--ff-text);
             min-height: 100vh;
+            transition: background .3s ease, color .3s ease;
         }
 
+        /* ── NAVBAR ──────────────────────────────────────────────── */
         .ff-nav {
             height: var(--nav-h);
-            background: var(--ff-navy);
+            background: var(--ff-nav-bg);
             position: sticky;
             top: 0;
             z-index: 1000;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            transition: background .3s ease;
         }
 
-            .ff-nav .container-fluid {
-                height: 100%;
-                display: flex;
-                align-items: center;
-                padding: 0 28px;
-            }
+        [data-theme="light"] .ff-nav {
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+        }
 
+        .ff-nav .container-fluid {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 28px;
+        }
+
+        /* Brand */
         .ff-brand {
             display: flex;
             align-items: center;
@@ -77,16 +125,19 @@
             align-items: center;
             justify-content: center;
             color: #fff;
+            font-size: 16px;
         }
 
         .ff-brand-text {
             font-weight: 800;
             color: #fff;
+            font-size: 16px;
         }
 
+        /* Nav links */
         .ff-nav-links {
             display: flex;
-            gap: 6px;
+            gap: 4px;
             flex: 1;
         }
 
@@ -98,6 +149,9 @@
             font-size: 14px;
             font-weight: 500;
             transition: background .15s, color .15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
             .ff-nav-link:hover {
@@ -110,6 +164,7 @@
                 color: #60a5fa;
             }
 
+        /* Right badge area */
         .ff-nav-badge {
             margin-left: auto;
             display: flex;
@@ -117,6 +172,7 @@
             gap: 10px;
         }
 
+        /* Score pill */
         .ff-score-pill {
             font-size: 12px;
             font-weight: 700;
@@ -124,6 +180,7 @@
             border-radius: 99px;
         }
 
+        /* Avatar */
         .ff-avatar {
             width: 36px;
             height: 36px;
@@ -145,16 +202,105 @@
                 transform: scale(1.05);
             }
 
+        /* ── THEME TOGGLE BUTTON ─────────────────────────────────── */
+        .theme-toggle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background .2s, color .2s, transform .15s;
+        }
+
+            .theme-toggle:hover {
+                background: rgba(255,255,255,0.15);
+                color: #fff;
+                transform: rotate(20deg) scale(1.1);
+            }
+
+        /* ── DROPDOWN ────────────────────────────────────────────── */
+        .ff-dropdown-menu {
+            background: var(--dd-bg) !important;
+            border: 1px solid var(--dd-border) !important;
+            border-radius: 14px !important;
+            padding: 8px !important;
+            min-width: 220px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25) !important;
+            transition: background .3s ease;
+        }
+
+            .ff-dropdown-menu .dropdown-item {
+                color: var(--dd-text);
+                border-radius: 8px;
+                font-size: 13px;
+                font-weight: 500;
+                padding: 9px 14px;
+                transition: background .15s;
+            }
+
+                .ff-dropdown-menu .dropdown-item:hover {
+                    background: var(--dd-hover);
+                    color: var(--dd-text);
+                }
+
+                .ff-dropdown-menu .dropdown-item.text-danger {
+                    color: var(--dd-danger) !important;
+                }
+
+                    .ff-dropdown-menu .dropdown-item.text-danger:hover {
+                        background: rgba(239,68,68,0.08);
+                    }
+
+            .ff-dropdown-menu hr {
+                border-color: var(--dd-border) !important;
+                opacity: 1;
+            }
+
+        .dd-user-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--dd-sub);
+        }
+
+        .dd-user-email {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--dd-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 190px;
+        }
+
+        /* ── PAGE WRAPPER ────────────────────────────────────────── */
         .ff-page {
             padding: 32px;
         }
 
+        /* ── FOOTER ──────────────────────────────────────────────── */
         .ff-footer {
             text-align: center;
             font-size: 12px;
             color: var(--ff-muted);
             padding: 24px;
             margin-top: 48px;
+            border-top: 1px solid var(--footer-border);
+            transition: border-color .3s ease;
+        }
+
+        /* ── SMOOTH TRANSITIONS ──────────────────────────────────── */
+        .ff-nav, .ff-footer,
+        .ff-dropdown-menu,
+        .ff-card, .g-card, .ff-card {
+            transition: background .3s ease, border-color .3s ease, color .3s ease;
         }
     </style>
 
@@ -171,33 +317,44 @@
                 <div class="ff-brand-icon">
                     <i class="bi bi-lightning-charge-fill"></i>
                 </div>
-                <span class="ff-brand-text">Focus<span style="color:#60a5fa;">Flow</span></span>
+                <span class="ff-brand-text">
+                    Focus<span style="color:#60a5fa;">Flow</span>
+                </span>
             </a>
 
-            <!-- Links -->
+            <!-- Nav Links -->
             <div class="ff-nav-links">
                 <a asp-controller="Home" asp-action="Index"
-                   class="ff-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
-                    Home
+                   class="ff-nav-link @(ViewContext.RouteData.Values["controller"]
+                                          ?.ToString() == "Home" ? "active" : "")">
+                    <i class="bi bi-house-fill"></i> Home
                 </a>
                 <a asp-controller="Subject" asp-action="Index"
-                   class="ff-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Subject" ? "active" : "")">
-                    Subjects
+                   class="ff-nav-link @(ViewContext.RouteData.Values["controller"]
+                                          ?.ToString() == "Subject" ? "active" : "")">
+                    <i class="bi bi-journal-bookmark-fill"></i> Subjects
                 </a>
                 <a asp-controller="StudySession" asp-action="Index"
-                   class="ff-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "StudySession" ? "active" : "")">
-                    Sessions
+                   class="ff-nav-link @(ViewContext.RouteData.Values["controller"]
+                                          ?.ToString() == "StudySession" ? "active" : "")">
+                    <i class="bi bi-clock-history"></i> Sessions
                 </a>
                 <a asp-controller="Dashboard" asp-action="Index"
-                   class="ff-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
-                    Dashboard
+                   class="ff-nav-link @(ViewContext.RouteData.Values["controller"]
+                                          ?.ToString() == "Dashboard" ? "active" : "")">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+                <a asp-controller="Settings" asp-action="Index"
+                   class="ff-nav-link @(ViewContext.RouteData.Values["controller"]
+                                             ?.ToString() == "Settings" ? "active" : "")">
+                    <i class="bi bi-gear-fill"></i> Settings
                 </a>
             </div>
 
             <!-- Right Section -->
             <div class="ff-nav-badge">
 
-                <!-- Score -->
+                <!-- Score pill -->
                 @if (ViewBag.NavScore != null)
                 {
                     string navLevel = ViewBag.NavLevel ?? "weak";
@@ -205,17 +362,26 @@
                     : navLevel == "good" ? "bg-warning text-dark"
                     : "bg-danger text-white";
                     <span class="ff-score-pill @pillCss">
+                        <i class="bi bi-lightning-charge-fill me-1"></i>
                         @ViewBag.NavScore%
                     </span>
                 }
+
+                <!-- ✅ Dark / Light Toggle Button -->
+                <button class="theme-toggle"
+                        id="themeToggle"
+                        title="Toggle Dark/Light mode"
+                        onclick="toggleTheme()">
+                    <i class="bi bi-moon-fill" id="themeIcon"></i>
+                </button>
 
                 <!-- Auth -->
                 @if (User.Identity!.IsAuthenticated)
                 {
                     string userEmail = User.Identity.Name ?? "?";
                     string initials = userEmail.Length > 0
-                    ? userEmail[0].ToString().ToUpper() : "?";
-
+                    ? userEmail[0].ToString().ToUpper()
+                    : "?";
                     <div class="dropdown">
                         <button class="btn p-0 border-0 bg-transparent"
                                 type="button"
@@ -224,58 +390,48 @@
                             <div class="ff-avatar">@initials</div>
                         </button>
 
-                        <ul class="dropdown-menu dropdown-menu-end mt-2 shadow"
-                            style="min-width:220px;border-radius:12px;
-                                       border:1px solid #e2e8f0;padding:8px;">
+                        <ul class="dropdown-menu dropdown-menu-end
+                                       ff-dropdown-menu mt-2">
 
-                            <!-- User Info -->
+                            <!-- User info -->
                             <li style="padding:10px 14px 8px;">
-                                <div style="font-size:11px;color:#64748b;
-                                                font-weight:600;text-transform:uppercase;
-                                                letter-spacing:.05em;">
-                                    Signed in as
-                                </div>
-                                <div style="font-size:13px;font-weight:700;
-                                                color:#0f172a;white-space:nowrap;
-                                                overflow:hidden;text-overflow:ellipsis;
-                                                max-width:190px;">
-                                    @userEmail
-                                </div>
+                                <div class="dd-user-label">Signed in as</div>
+                                <div class="dd-user-email">@userEmail</div>
                             </li>
 
                             <li><hr class="dropdown-divider my-1"></li>
 
-                            <!-- Dashboard -->
                             <li>
                                 <a asp-controller="Dashboard" asp-action="Index"
-                                   class="dropdown-item rounded-2 d-flex align-items-center gap-2"
-                                   style="font-size:13px;font-weight:500;">
+                                   class="dropdown-item d-flex align-items-center gap-2">
                                     <i class="bi bi-speedometer2 text-primary"></i>
                                     Dashboard
                                 </a>
                             </li>
-
-                            <!-- Subjects -->
                             <li>
                                 <a asp-controller="Subject" asp-action="Index"
-                                   class="dropdown-item rounded-2 d-flex align-items-center gap-2"
-                                   style="font-size:13px;font-weight:500;">
+                                   class="dropdown-item d-flex align-items-center gap-2">
                                     <i class="bi bi-journal-bookmark text-primary"></i>
                                     My Subjects
+                                </a>
+                            </li>
+                            <li>
+                                <a asp-controller="StudySession" asp-action="Log"
+                                   class="dropdown-item d-flex align-items-center gap-2">
+                                    <i class="bi bi-plus-circle text-success"></i>
+                                    Log Session
                                 </a>
                             </li>
 
                             <li><hr class="dropdown-divider my-1"></li>
 
-                            <!-- Logout -->
                             <li>
-                                <form asp-controller="Account" asp-action="Logout"
-                                      method="post">
+                                <form asp-controller="Account"
+                                      asp-action="Logout" method="post">
                                     @Html.AntiForgeryToken()
                                     <button type="submit"
-                                            class="dropdown-item rounded-2
-                                                       d-flex align-items-center gap-2 text-danger"
-                                            style="font-size:13px;font-weight:600;">
+                                            class="dropdown-item text-danger
+                                                       d-flex align-items-center gap-2">
                                         <i class="bi bi-box-arrow-right"></i>
                                         Logout
                                     </button>
@@ -287,17 +443,18 @@
                 else
                 {
                     <a asp-controller="Account" asp-action="Login"
-                       class="btn btn-sm btn-outline-light rounded-pill px-3">
-                        Login
+                       class="btn btn-sm btn-outline-light rounded-pill px-3"
+                       style="font-size:13px;font-weight:600;">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Login
                     </a>
                     <a asp-controller="Account" asp-action="Register"
-                       class="btn btn-sm btn-primary rounded-pill px-3">
-                        Register
+                       class="btn btn-sm btn-primary rounded-pill px-3"
+                       style="font-size:13px;font-weight:600;">
+                        <i class="bi bi-person-plus me-1"></i>Register
                     </a>
                 }
 
             </div>
-
         </div>
     </nav>
 
@@ -309,7 +466,47 @@
         FocusFlow &copy; @DateTime.Now.Year
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+    </script>
+
+    <script>
+        // ── THEME SYSTEM ──────────────────────────────────────────────
+        const html      = document.documentElement;
+        const toggleBtn = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+
+        // Load saved theme — default is dark
+        const savedTheme = localStorage.getItem('ff-theme') || 'dark';
+        applyTheme(savedTheme);
+
+                function applyTheme(theme) {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem('ff-theme', theme);
+
+            if (theme === 'light') {
+                themeIcon.className = 'bi bi-sun-fill';
+                toggleBtn.style.background = 'rgba(0,0,0,0.12)';
+                toggleBtn.style.color      = 'rgba(255,255,255,0.9)';
+
+                document.querySelectorAll('.ff-dropdown-menu')
+                    .forEach(el => el.style.background = '#ffffff');
+
+            } else {
+                themeIcon.className = 'bi bi-moon-fill';
+                toggleBtn.style.background = 'rgba(255,255,255,0.08)';
+                toggleBtn.style.color      = 'rgba(255,255,255,0.8)';
+
+                document.querySelectorAll('.ff-dropdown-menu')
+                    .forEach(el => el.style.background = '#1e293b');
+            }
+        }
+
+        function toggleTheme() {
+            const current = html.getAttribute('data-theme') || 'dark';
+            const next    = current === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+        }
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 
