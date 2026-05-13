@@ -31,7 +31,6 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<FocusScoreService>();
 
 var app = builder.Build();
-
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
